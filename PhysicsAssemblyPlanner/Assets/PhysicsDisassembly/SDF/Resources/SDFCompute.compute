@@ -1,0 +1,134 @@
+#pragma kernel InitialDistance
+#pragma kernel SweepPositive
+#pragma kernel SweepNegative
+
+// Structures
+struct Triangle
+{
+    float3 p, q, r;
+};
+
+// Buffers
+RWStructuredBuffer<float> _Distances;
+RWStructuredBuffer<int> _ClosestTriangles;
+StructuredBuffer<Triangle> _Triangles;
+
+// Parameters
+int _GridSize;
+float _CellSize;
+float3 _Origin;
+uint _NumTriangles;
+int3 _SweepDirection;
+
+float PointSegmentDistance(float3 x0, float3 x1, float3 x2)
+{
+    float3 dx = x2 - x1;
+    float m2 = dot(dx, dx);
+    float s12 = dot(x2 - x0, dx) / m2;
+    s12 = clamp(s12, 0.0, 1.0);
+    return length(x0 - (s12 * x1 + (1.0 - s12) * x2));
+}
+
+float PointTriangleDistance(float3 x0, float3 x1, float3 x2, float3 x3)
+{
+    float3 x13 = x1 - x3;
+    float3 x23 = x2 - x3;
+    float3 x03 = x0 - x3;
+    float m13 = dot(x13, x13);
+    float m23 = dot(x23, x23);
+    float d = dot(x13, x23);
+    float invDet = 1.0 / max(m13 * m23 - d * d, 1e-30);
+    float a = dot(x13, x03);
+    float b = dot(x23, x03);
+    float w23 = invDet * (m23 * a - d * b);
+    float w31 = invDet * (m13 * b - d * a);
+    float w12 = 1.0 - w23 - w31;
+    
+    if (w23 >= 0.0 && w31 >= 0.0 && w12 >= 0.0)
+    {
+        return length(x0 - (w23 * x1 + w31 * x2 + w12 * x3));
+    }
+    else
+    {
+        if (w23 > 0.0)
+        {
+            return min(PointSegmentDistance(x0, x1, x2), PointSegmentDistance(x0, x1, x3));
+        }
+        else if (w31 > 0.0)
+        {
+            return min(PointSegmentDistance(x0, x1, x2), PointSegmentDistance(x0, x2, x3));
+        }
+        else
+        {
+            return min(PointSegmentDistance(x0, x1, x3), PointSegmentDistance(x0, x2, x3));
+        }
+    }
+}
+
+[numthreads(8,8,8)]
+void InitialDistance (uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= _GridSize || id.y >= _GridSize || id.z >= _GridSize)
+        return;
+
+    int index = id.x + id.y * _GridSize + id.z * _GridSize * _GridSize;
+    float3 gx = id * _CellSize + _Origin;
+    float minDist = 1e30;
+    int closestTri = -1;
+
+    for (uint t = 0; t < _NumTriangles; t++)
+    {
+        Triangle tri = _Triangles[t];
+        float dist = PointTriangleDistance(gx, tri.p, tri.q, tri.r);
+        if (dist < minDist)
+        {
+            minDist = dist;
+            closestTri = t;
+        }
+    }
+
+    _Distances[index] = minDist;
+    _ClosestTriangles[index] = closestTri;
+}
+
+[numthreads(8,8,8)]
+void SweepPositive (uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)_GridSize || id.y >= (uint)_GridSize || id.z >= (uint)_GridSize)
+        return;
+
+    int3 current = int3(id.x, id.y, id.z);
+    int index = current.x + current.y * _GridSize + current.z * _GridSize * _GridSize;
+
+    int3 prev = current - _SweepDirection;
+    if (all(prev >= 0) && all(prev < _GridSize))
+    {
+        int prevIndex = prev.x + prev.y * _GridSize + prev.z * _GridSize * _GridSize;
+        if (_Distances[prevIndex] + _CellSize < _Distances[index])
+        {
+            _Distances[index] = _Distances[prevIndex] + _CellSize;
+            _ClosestTriangles[index] = _ClosestTriangles[prevIndex];
+        }
+    }
+}
+
+[numthreads(8,8,8)]
+void SweepNegative (uint3 id : SV_DispatchThreadID)
+{
+    int3 current = int3(_GridSize - 1, _GridSize - 1, _GridSize - 1) - int3(id.x, id.y, id.z);
+    if (any(current < 0) || any(current >= _GridSize))
+        return;
+
+    int index = current.x + current.y * _GridSize + current.z * _GridSize * _GridSize;
+
+    int3 prev = current + _SweepDirection;
+    if (all(prev >= 0) && all(prev < _GridSize))
+    {
+        int prevIndex = prev.x + prev.y * _GridSize + prev.z * _GridSize * _GridSize;
+        if (_Distances[prevIndex] + _CellSize < _Distances[index])
+        {
+            _Distances[index] = _Distances[prevIndex] + _CellSize;
+            _ClosestTriangles[index] = _ClosestTriangles[prevIndex];
+        }
+    }
+}
