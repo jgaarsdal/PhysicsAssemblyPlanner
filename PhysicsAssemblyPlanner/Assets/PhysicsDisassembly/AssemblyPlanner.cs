@@ -45,12 +45,18 @@ public class AssemblyPlanner : MonoBehaviour
 
     private ConcurrentDictionary<(int, Vector3, Quaternion), bool> _collisionCache = new ConcurrentDictionary<(int, Vector3, Quaternion), bool>();
     
+    [ContextMenu("Run Planner")]
+    public void VisualizeSDFButton()
+    {
+        PlanDisassemblySequence();
+    }
+    
     private void Start()
     {
         InitializeAssembly();
     }
 
-    private async void InitializeAssembly()
+    private async Task InitializeAssembly()
     {
         _partSDFs = new List<SignedDistanceField>();
         _initialPositions = new List<Vector3>();
@@ -67,6 +73,8 @@ public class AssemblyPlanner : MonoBehaviour
             _initialPositions.Add(part.transform.position);
             _initialRotations.Add(part.transform.rotation);
         }
+        
+        Debug.Log("Assembly Planner initialized!");
     }
     
     public async Task<List<DisassemblyStep>> PlanDisassemblySequence()
@@ -88,6 +96,8 @@ public class AssemblyPlanner : MonoBehaviour
                 break;
             }
         }
+        
+        Debug.Log("Assembly Planner finished!");
 
         return disassemblySequence;
     }
