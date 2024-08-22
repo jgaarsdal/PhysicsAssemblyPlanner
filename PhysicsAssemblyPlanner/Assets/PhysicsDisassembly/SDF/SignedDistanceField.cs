@@ -12,12 +12,14 @@ public static class Vector3Extensions
 
 public class SignedDistanceField
 {
+    public Transform ObjectTransform => _objectTransform;
     public float[,,] Distances => _distances;
     public int GridSize => _gridSize;
     public Vector3 Origin => _origin;
     public float CellSize => _cellSize;
 
     private Mesh _mesh;
+    private Transform _objectTransform;
     private float[,,] _distances;
     private int[,,] _closestTriangles;
     private Vector3 _origin;
@@ -30,12 +32,13 @@ public class SignedDistanceField
     private ComputeBuffer _closestTrianglesBuffer;
     private ComputeBuffer _trianglesBuffer;
     
-    public SignedDistanceField(Mesh mesh, int gridSize = 32, float boundingBoxPadding = 0.1f)
+    public SignedDistanceField(Mesh mesh, Transform meshTransform, int gridSize = 32, float boundingBoxPadding = 0.1f)
     {
         var bounds = mesh.bounds;
         bounds.Expand(boundingBoxPadding);
 
         _mesh = mesh;
+        _objectTransform = meshTransform;
         _origin = bounds.min;
         _cellSize = Mathf.Max(bounds.size.x, bounds.size.y, bounds.size.z) / (gridSize - 1);
         _gridSize = gridSize;
@@ -82,6 +85,55 @@ public class SignedDistanceField
         }
         
         Debug.Log($"ComputeSDF time on {platformStr}: {Time.realtimeSinceStartup - startTime} seconds");
+    }
+    
+    public bool CheckCollision(SignedDistanceField part2Sdf, Vector3 position, Quaternion rotation)
+    {
+        // Get the SDFs for both parts
+        var part2Distances = part2Sdf.Distances;
+
+        // Get the transforms for both parts
+        Transform part2Transform = part2Sdf.ObjectTransform;
+
+        // Calculate the relative transform
+        Matrix4x4 E0i = Matrix4x4.TRS(_objectTransform.position, _objectTransform.rotation, Vector3.one);
+        Matrix4x4 part2E0i = Matrix4x4.TRS(part2Transform.position, part2Transform.rotation, Vector3.one);
+        Matrix4x4 relativeTransform = part2E0i.inverse * E0i;
+
+        // Apply the new position and rotation
+        Matrix4x4 newTransform = Matrix4x4.TRS(position, rotation, Vector3.one) * relativeTransform;
+        
+        Vector3 part2Origin = part2Sdf.Origin;
+
+        for (int i = 0; i < GridSize; i++)
+        {
+            for (int j = 0; j < GridSize; j++)
+            {
+                for (int k = 0; k < GridSize; k++)
+                {
+                    Vector3 x = part2Origin + new Vector3(i, j, k) * _cellSize;
+                    Vector3 xMove = newTransform.inverse.MultiplyPoint3x4(x);
+                    Vector3 xMoveGrid = (xMove - _origin) / _cellSize;
+
+                    if (xMoveGrid.x >= 0 && xMoveGrid.x < GridSize - 1 &&
+                        xMoveGrid.y >= 0 && xMoveGrid.y < GridSize - 1 &&
+                        xMoveGrid.z >= 0 && xMoveGrid.z < GridSize - 1)
+                    {
+                        float d0 = part2Distances[i, j, k];
+                        float d1 = TrilinearInterpolation(_distances, xMoveGrid.x, xMoveGrid.y, xMoveGrid.z);
+
+                        if (d0 < 0 && d1 < 0)
+                        {
+                            // Collision detected
+                            return true; 
+                        }
+                    }
+                }
+            }
+        }
+
+        // No collision detected
+        return false; 
     }
 
     private async Task ComputeSDFOnGPUAsync()
@@ -569,4 +621,31 @@ public class SignedDistanceField
         return SystemInfo.supportsComputeShaders;
     }
 
+    private float TrilinearInterpolation(float[,,] distances, float x, float y, float z)
+    {
+        int x0 = Mathf.FloorToInt(x);
+        int y0 = Mathf.FloorToInt(y);
+        int z0 = Mathf.FloorToInt(z);
+        int x1 = x0 + 1;
+        int y1 = y0 + 1;
+        int z1 = z0 + 1;
+
+        float xd = x - x0;
+        float yd = y - y0;
+        float zd = z - z0;
+
+        float c000 = distances[x0, y0, z0];
+        float c100 = distances[x1, y0, z0];
+        float c010 = distances[x0, y1, z0];
+        float c110 = distances[x1, y1, z0];
+        float c001 = distances[x0, y0, z1];
+        float c101 = distances[x1, y0, z1];
+        float c011 = distances[x0, y1, z1];
+        float c111 = distances[x1, y1, z1];
+
+        return Mathf.Lerp(
+            Mathf.Lerp(Mathf.Lerp(c000, c100, xd), Mathf.Lerp(c010, c110, xd), yd),
+            Mathf.Lerp(Mathf.Lerp(c001, c101, xd), Mathf.Lerp(c011, c111, xd), yd),
+            zd);
+    }
 }

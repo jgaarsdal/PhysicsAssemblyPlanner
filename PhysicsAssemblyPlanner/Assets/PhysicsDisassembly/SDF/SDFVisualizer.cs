@@ -32,7 +32,7 @@ public class SDFVisualizer : MonoBehaviour
     public async void VisualizeSDF()
     {
         var mesh = this.GetComponent<MeshFilter>().sharedMesh;
-        var sdf = new SignedDistanceField(mesh, _sdfGridSize, _sdfBoxPadding);
+        var sdf = new SignedDistanceField(mesh, this.transform, _sdfGridSize, _sdfBoxPadding);
         await sdf.ComputeSDF(_useGPU);
         
         ClearVisualization();
