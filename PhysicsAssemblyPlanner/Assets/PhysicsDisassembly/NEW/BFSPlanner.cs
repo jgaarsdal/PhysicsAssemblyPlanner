@@ -4,101 +4,49 @@ using UnityEngine;
 
 public class BFSPlanner
 {
-    private const float TransDistTh = 0.05f;
-    private const float QuatDistTh = 0.5f;
+    private const float _transDistTh = 0.05f;
+    private const float _quatDistTh = 0.5f;
+    
+    private string _moveId;
+    private List<string> _stillIds;
+    private bool _useRotation;
+    private float _forceMag;
+    private int _frameSkip;
 
-    private string assetFolder;
-    private string assemblyDir;
-    private string moveId;
-    private List<string> stillIds;
-    private bool rotation;
-    private string bodyType;
-    private float sdfDx;
-    private float collisionTh;
-    private float forceMag;
-    private int frameSkip;
-    private int ndof;
+    private SignedDistanceField _sdf;
+    private PhysicsSimulation _simulation;
+    
+    //private Vector3 _minBoxMove;
+    //private Vector3 _maxBoxMove;
+    //private Vector3 _sizeBoxMove;
+    private Vector3 _minBoxStill;
+    private Vector3 _maxBoxStill;
+    //private Vector3 _sizeBoxStill;
+    //private Vector3 _stateLowerBound;
+    //private Vector3 _stateUpperBound;
 
-    private Dictionary<string, SignedDistanceField> _partSDFs = new Dictionary<string, SignedDistanceField>();
-    private PhysicsSimulation simulation;
-
-    private Vector3 minBoxMove;
-    private Vector3 maxBoxMove;
-    private Vector3 sizeBoxMove;
-    private Vector3 minBoxStill;
-    private Vector3 maxBoxStill;
-    private Vector3 sizeBoxStill;
-    private Vector3 stateLowerBound;
-    private Vector3 stateUpperBound;
-
-    public BFSPlanner(string assetFolder, string assemblyDir, string moveId, List<string> stillIds,
-        bool rotation, string bodyType, float sdfDx, float collisionTh, float forceMag, int frameSkip)
+    public BFSPlanner(string moveId, List<string> stillIds, bool useRotation, 
+        float forceMag, int frameSkip, Dictionary<string, Mesh> partMeshes)
     {
-        this.assetFolder = assetFolder;
-        this.assemblyDir = assemblyDir;
-        this.moveId = moveId;
-        this.stillIds = stillIds;
-        this.rotation = rotation;
-        this.bodyType = bodyType;
-        this.sdfDx = sdfDx;
-        this.collisionTh = collisionTh;
-        this.forceMag = forceMag;
-        this.frameSkip = frameSkip;
-        this.ndof = rotation ? 6 : 3;
+        _moveId = moveId;
+        _stillIds = stillIds;
+        _useRotation = useRotation;
+        _forceMag = forceMag;
+        _frameSkip = frameSkip;
 
-        InitializeSimulation();
+        InitializeSimulation(partMeshes);
         CalculateBounds();
     }
 
-    private void InitializeSimulation()
-    {
-        // Initialize SignedDistanceField and PhysicsSimulation
-        //simulation = new PhysicsSimulation(/* parameters */);
-    }
-
-    private void CalculateBounds()
-    {
-        // Get the vertices of the moving part
-        Vector3[] verticesMove = simulation.GetVertices(moveId);
-    
-        // Calculate bounds for the moving part
-        minBoxMove = Vector3.positiveInfinity;
-        maxBoxMove = Vector3.negativeInfinity;
-        foreach (Vector3 vertex in verticesMove)
-        {
-            minBoxMove = Vector3.Min(minBoxMove, vertex);
-            maxBoxMove = Vector3.Max(maxBoxMove, vertex);
-        }
-        sizeBoxMove = maxBoxMove - minBoxMove;
-
-        // Calculate bounds for the still parts
-        minBoxStill = Vector3.positiveInfinity;
-        maxBoxStill = Vector3.negativeInfinity;
-        foreach (string stillId in stillIds)
-        {
-            Vector3[] verticesStill = simulation.GetVertices(stillId);
-            foreach (Vector3 vertex in verticesStill)
-            {
-                minBoxStill = Vector3.Min(minBoxStill, vertex);
-                maxBoxStill = Vector3.Max(maxBoxStill, vertex);
-            }
-        }
-        sizeBoxStill = maxBoxStill - minBoxStill;
-
-        // Calculate state bounds
-        stateLowerBound = (minBoxStill - maxBoxMove) - 0.5f * sizeBoxMove;
-        stateUpperBound = (maxBoxStill - minBoxMove) + 0.5f * sizeBoxMove;
-    }
-
-    public (string status, float tPlan, List<Vector3> path) Plan(float maxTime, int maxDepth, int seed, 
-        bool returnPath = true, bool render = false, string recordPath = null)
+    public (string status, float tPlan, List<Vector3> path) Plan(float maxTime, int maxDepth, int seed)
     {
         UnityEngine.Random.InitState(seed);
 
-        simulation.Reset();
+        _simulation.Reset();
 
-        Tree tree = new Tree();
-        State initState = GetState();
+        var tree = new Tree();
+        var initState = GetState();
+        
         tree.AddNode(initState);
 
         if (IsDisassembled())
@@ -106,32 +54,34 @@ public class BFSPlanner
             return ("Start with goal", 0f, new List<Vector3>());
         }
 
-        string status = "Failure";
+        var status = "Failure";
+        var tStart = Time.realtimeSinceStartup;
+        var step = 0;
         List<Vector3> path = null;
-        float tStart = Time.realtimeSinceStartup;
-        int step = 0;
 
-        Queue<State> stateQueue = new Queue<State>();
+        var stateQueue = new Queue<State>();
         stateQueue.Enqueue(initState);
 
         while (stateQueue.Count > 0 && step < maxDepth)
         {
-            State state = stateQueue.Dequeue();
+            var state = stateQueue.Dequeue();
             
-            foreach (Vector3 action in GetActions())
+            foreach (var action in GetActions())
             {
                 SetState(state);
                 ApplyAction(action);
-                simulation.UpdateParts();
+                
+                _simulation.UpdateParts();
 
-                List<State> statesBetween = new List<State>();
-                for (int i = 0; i < frameSkip; i++)
+                var statesBetween = new List<State>();
+                for (var i = 0; i < _frameSkip; i++)
                 {
-                    simulation.Forward(1);
-                    State stateBetween = GetState();
+                    _simulation.Forward(1);
+                    
+                    var stateBetween = GetState();
                     statesBetween.Add(stateBetween);
 
-                    float tPlan = Time.realtimeSinceStartup - tStart;
+                    var tPlan = Time.realtimeSinceStartup - tStart;
                     if (tPlan > maxTime)
                     {
                         status = "Timeout";
@@ -139,7 +89,7 @@ public class BFSPlanner
                     }
                 }
 
-                State newState = statesBetween[statesBetween.Count - 1];
+                var newState = statesBetween[statesBetween.Count - 1];
 
                 if (!AnyStateSimilar(tree.GetNodes(), newState))
                 {
@@ -158,73 +108,73 @@ public class BFSPlanner
 
             step++;
         }
-
-        if (render)
-        {
-            Render(path, recordPath);
-        }
-
+        
         return (status, Time.realtimeSinceStartup - tStart, path);
     }
 
     private State GetState()
     {
-        Vector3 position = simulation.GetPosition(moveId);
-        Quaternion rotation = simulation.GetRotation(moveId);
-        Vector3 velocity = simulation.GetVelocity(moveId);
-        Vector3 angularVelocity = simulation.GetAngularVelocity(moveId);
+        var position = _simulation.GetPosition(_moveId);
+        var rotation = _simulation.GetRotation(_moveId);
+        var velocity = _simulation.GetVelocity(_moveId);
+        var angularVelocity = _simulation.GetAngularVelocity(_moveId);
         return new State(position, rotation, velocity, angularVelocity);
     }
 
     private void SetState(State state)
     {
-        simulation.SetPosition(moveId, state.Position);
-        simulation.SetRotation(moveId, state.Rotation);
-        simulation.SetVelocity(moveId, state.Velocity);
-        simulation.SetAngularVelocity(moveId, state.AngularVelocity);
+        _simulation.SetPosition(_moveId, state.Position);
+        _simulation.SetRotation(_moveId, state.Rotation);
+        _simulation.SetVelocity(_moveId, state.Velocity);
+        _simulation.SetAngularVelocity(_moveId, state.AngularVelocity);
     }
 
     private void ApplyAction(Vector3 action)
     {
-        Vector3 force = action.normalized * forceMag;
-        if (rotation)
+        var force = action.normalized * _forceMag;
+        if (_useRotation)
         {
-            Vector3 torque = new Vector3(force.x * 3, force.y * 3, force.z);
-            simulation.ApplyForceAndTorque(moveId, force, torque);
+            var torque = new Vector3(force.x * 3, force.y * 3, force.z);
+            _simulation.ApplyForceAndTorque(_moveId, force, torque);
         }
         else
         {
-            simulation.ApplyForce(moveId, force);
+            _simulation.ApplyForce(_moveId, force);
         }
     }
 
     private bool IsDisassembled()
     {
-        Vector3 position = simulation.GetPosition(moveId);
-        Quaternion rotation = simulation.GetRotation(moveId);
+        var position = _simulation.GetPosition(_moveId);
+        var rotation = _simulation.GetRotation(_moveId);
 
-        foreach (string stillId in stillIds)
+        foreach (var stillId in _stillIds)
         {
-            var moveSdf = _partSDFs[moveId];
-            var stillSdf = _partSDFs[stillId];
-            if (moveSdf.CheckCollision(stillSdf, position, rotation))
+            if (_sdf.CheckCollision(_moveId, stillId, position, _useRotation))
             {
                 return false;
             }
         }
 
-        Vector3 minBox = position + rotation * minBoxMove;
-        Vector3 maxBox = position + rotation * maxBoxMove;
+        var moveVertices = _simulation.GetVertices(_moveId, true);
+        var minMove = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
+        var maxMove = new Vector3(float.MinValue, float.MinValue, float.MinValue);
 
-        bool moveContainStill = Vector3.Min(minBox, minBoxStill) == minBox && Vector3.Max(maxBox, maxBoxStill) == maxBox;
-        bool stillContainMove = Vector3.Min(minBox, minBoxStill) == minBoxStill && Vector3.Max(maxBox, maxBoxStill) == maxBoxStill;
+        foreach (var vertex in moveVertices)
+        {
+            minMove = Vector3.Min(minMove, vertex);
+            maxMove = Vector3.Max(maxMove, vertex);
+        }
+
+        var moveContainStill = Vector3.Min(minMove, _minBoxStill) == minMove && Vector3.Max(maxMove, _maxBoxStill) == maxMove;
+        var stillContainMove = Vector3.Min(minMove, _minBoxStill) == _minBoxStill && Vector3.Max(maxMove, _maxBoxStill) == _maxBoxStill;
 
         return !(moveContainStill || stillContainMove);
     }
 
     private Vector3[] GetActions()
     {
-        if (rotation)
+        if (_useRotation)
         {
             return new Vector3[]
             {
@@ -253,7 +203,7 @@ public class BFSPlanner
 
     private bool AnyStateSimilar(List<State> states, State newState)
     {
-        foreach (State state in states)
+        foreach (var state in states)
         {
             if (StateSimilar(state, newState))
             {
@@ -265,74 +215,46 @@ public class BFSPlanner
 
     private bool StateSimilar(State state1, State state2)
     {
-        float transDist = Vector3.Distance(state1.Position, state2.Position);
-        if (rotation)
+        var transDist = Vector3.Distance(state1.Position, state2.Position);
+        if (_useRotation)
         {
-            float quatDist = Quaternion.Angle(state1.Rotation, state2.Rotation);
-            return transDist < TransDistTh && quatDist < QuatDistTh;
+            var quatDist = Quaternion.Angle(state1.Rotation, state2.Rotation);
+            return transDist < _transDistTh && quatDist < _quatDistTh;
         }
-        else
-        {
-            return transDist < TransDistTh;
-        }
+
+        return transDist < _transDistTh;
     }
 
     private List<Vector3> GetPath(Tree tree, State endState)
     {
-        List<State> statePath = tree.GetRootPath(endState);
+        var statePath = tree.GetRootPath(endState);
         return statePath.Select(state => state.Position).ToList();
     }
 
-    private void Render(List<Vector3> path, string recordPath)
+    private void InitializeSimulation(Dictionary<string, Mesh> partMeshes)
     {
-        // This method would be used to visualize the path in the Unity scene
-        // and optionally record it if recordPath is provided
-        if (path == null || path.Count == 0)
-        {
-            Debug.LogWarning("No path to render.");
-            return;
-        }
-
-        // Visualize the path in the scene
-        for (int i = 0; i < path.Count - 1; i++)
-        {
-            Debug.DrawLine(path[i], path[i + 1], Color.green, 5f);
-        }
-
-        // If recordPath is provided, we could use Unity's built-in recording tools
-        // or a custom recording solution to save the visualization
-        if (!string.IsNullOrEmpty(recordPath))
-        {
-            Debug.Log($"Recording path to: {recordPath}");
-            // Implement recording logic here
-        }
+        // Initialize SignedDistanceField and PhysicsSimulation
+        // This will depend on your specific implementation of these components
     }
-
-    public void SavePath(List<Vector3> path, string saveDir, int nSaveState)
+    
+    private void CalculateBounds()
     {
-        if (path == null || path.Count == 0)
+        //_minBoxMove = _simulation.GetBounds(_moveId).min;
+        //_maxBoxMove = _simulation.GetBounds(_moveId).max;
+        //_sizeBoxMove = _maxBoxMove - _minBoxMove;
+
+        _minBoxStill = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
+        _maxBoxStill = new Vector3(float.MinValue, float.MinValue, float.MinValue);
+        foreach (var stillId in _stillIds)
         {
-            Debug.LogWarning("No path to save.");
-            return;
+            var minBounds = _simulation.GetBounds(stillId).min;
+            var maxBounds = _simulation.GetBounds(stillId).max;
+            _minBoxStill = Vector3.Min(_minBoxStill, minBounds);
+            _maxBoxStill = Vector3.Max(_maxBoxStill, maxBounds);
         }
+        //_sizeBoxStill = _maxBoxStill - _minBoxStill;
 
-        // Ensure the save directory exists
-        System.IO.Directory.CreateDirectory(saveDir);
-
-        // Calculate the step size to save nSaveState points
-        int stepSize = Mathf.Max(1, path.Count / nSaveState);
-
-        // Save the path points
-        string pathFile = System.IO.Path.Combine(saveDir, "path.txt");
-        using (System.IO.StreamWriter writer = new System.IO.StreamWriter(pathFile))
-        {
-            for (int i = 0; i < path.Count; i += stepSize)
-            {
-                Vector3 point = path[i];
-                writer.WriteLine($"{point.x} {point.y} {point.z}");
-            }
-        }
-
-        Debug.Log($"Path saved to: {pathFile}");
+        //_stateLowerBound = (_minBoxStill - _maxBoxMove) - 0.5f * _sizeBoxMove;
+        //_stateUpperBound = (_maxBoxStill - _minBoxMove) + 0.5f * _sizeBoxMove;
     }
 }
