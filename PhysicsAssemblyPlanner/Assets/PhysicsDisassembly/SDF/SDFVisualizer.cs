@@ -2,7 +2,11 @@ using UnityEngine;
 
 public class SDFVisualizer : MonoBehaviour
 {
-    [SerializeField] private float _visualizationScale = 0.1f;
+    // TODO: Make cell size similar to the paper, and no need to make grid larger than the bounds (plus padding)
+    // TODO: So instead of specifying number of cells, number of cells is determined by the cell size and the bounds
+
+    // TODO: Also make a script to test the collision between SDFs
+    
     [SerializeField] private float _maxDistance = 1f;
     [SerializeField] private int _sdfGridSize = 8;
     [SerializeField] private float _sdfBoxPadding = 0.1f;
@@ -66,13 +70,22 @@ public class SDFVisualizer : MonoBehaviour
         var position = origin + new Vector3(x * cellSize, y * cellSize, z * cellSize);
         cube.transform.position = position;
         
-        cube.transform.localScale = Vector3.one * _visualizationScale;
+        //cube.transform.localScale = Vector3.one * _visualizationScale;
+        var globalScale = Vector3.one * cellSize;
+        cube.transform.localScale = Vector3.one;
+        cube.transform.localScale = new Vector3 (globalScale.x / cube.transform.lossyScale.x, globalScale.y / cube.transform.lossyScale.y, globalScale.z / cube.transform.lossyScale.z);
 
         var renderer = cube.GetComponent<Renderer>();
         renderer.material = new Material(_material);
         renderer.material.color = GetDistanceColor(distance);
 
         _visualizationCubes[x, y, z] = cube;
+    }
+    
+    public static void SetGlobalScale (Transform transform, Vector3 globalScale)
+    {
+        transform.localScale = Vector3.one;
+        transform.localScale = new Vector3 (globalScale.x/transform.lossyScale.x, globalScale.y/transform.lossyScale.y, globalScale.z/transform.lossyScale.z);
     }
 
     private void ClearVisualization()

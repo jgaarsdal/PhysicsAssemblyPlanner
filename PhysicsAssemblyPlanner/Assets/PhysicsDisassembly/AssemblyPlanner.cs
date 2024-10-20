@@ -248,7 +248,7 @@ public class AssemblyPlanner : MonoBehaviour
     private (Vector3, Quaternion) SimulateAction(int partIndex, Vector3 position, Quaternion rotation, PhysicsAction action)
     {
         var rb = _assemblyParts[partIndex].GetComponent<Rigidbody>();
-        var velocity = rb.velocity;
+        var velocity = rb.linearVelocity;
         var angularVelocity = rb.angularVelocity;
 
         // Apply gravity

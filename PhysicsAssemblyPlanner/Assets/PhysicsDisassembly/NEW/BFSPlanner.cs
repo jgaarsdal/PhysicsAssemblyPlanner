@@ -4,16 +4,16 @@ using UnityEngine;
 
 public class BFSPlanner
 {
-    private const float _transDistTh = 0.05f;
-    private const float _quatDistTh = 0.5f;
+    private const float _statePosDistThreshold = 0.05f;
+    private const float _stateAngleDistThreshold = 0.5f;
     
     private string _moveId;
     private List<string> _stillIds;
     private bool _useRotation;
-    private float _forceMag;
-    private int _frameSkip;
-
-    private SignedDistanceField _sdf;
+    private float _simulationForce;
+    private int _simulationFrameSkip;
+    
+    private Dictionary<string, SignedDistanceField> _partSDFs;
     private PhysicsSimulation _simulation;
     
     //private Vector3 _minBoxMove;
@@ -26,22 +26,21 @@ public class BFSPlanner
     //private Vector3 _stateUpperBound;
 
     public BFSPlanner(string moveId, List<string> stillIds, bool useRotation, 
-        float forceMag, int frameSkip, Dictionary<string, Mesh> partMeshes)
+        float simulationForce, int simulationFrameSkip, Dictionary<string, Mesh> partMeshes, Dictionary<string, SignedDistanceField> partSDFs)
     {
         _moveId = moveId;
         _stillIds = stillIds;
+        _partSDFs = partSDFs;
         _useRotation = useRotation;
-        _forceMag = forceMag;
-        _frameSkip = frameSkip;
+        _simulationForce = simulationForce;
+        _simulationFrameSkip = simulationFrameSkip;
 
-        InitializeSimulation(partMeshes);
+        _simulation = new PhysicsSimulation(partMeshes);
         CalculateBounds();
     }
 
-    public (string status, float tPlan, List<Vector3> path) Plan(float maxTime, int maxDepth, int seed)
+    public (string status, float totalDurationSecs, List<Vector3> path) Plan(float timeoutSecs, int maxDepth)
     {
-        UnityEngine.Random.InitState(seed);
-
         _simulation.Reset();
 
         var tree = new Tree();
@@ -55,7 +54,7 @@ public class BFSPlanner
         }
 
         var status = "Failure";
-        var tStart = Time.realtimeSinceStartup;
+        var startTime = Time.realtimeSinceStartup;
         var step = 0;
         List<Vector3> path = null;
 
@@ -74,18 +73,18 @@ public class BFSPlanner
                 _simulation.UpdateParts();
 
                 var statesBetween = new List<State>();
-                for (var i = 0; i < _frameSkip; i++)
+                for (var i = 0; i < _simulationFrameSkip; i++)
                 {
                     _simulation.Forward(1);
                     
                     var stateBetween = GetState();
                     statesBetween.Add(stateBetween);
 
-                    var tPlan = Time.realtimeSinceStartup - tStart;
-                    if (tPlan > maxTime)
+                    var durationSecs = Time.realtimeSinceStartup - startTime;
+                    if (durationSecs > timeoutSecs)
                     {
                         status = "Timeout";
-                        return (status, tPlan, null);
+                        return (status, durationSecs, null);
                     }
                 }
 
@@ -101,7 +100,7 @@ public class BFSPlanner
                     {
                         status = "Success";
                         path = GetPath(tree, newState);
-                        return (status, Time.realtimeSinceStartup - tStart, path);
+                        return (status, Time.realtimeSinceStartup - startTime, path);
                     }
                 }
             }
@@ -109,7 +108,7 @@ public class BFSPlanner
             step++;
         }
         
-        return (status, Time.realtimeSinceStartup - tStart, path);
+        return (status, Time.realtimeSinceStartup - startTime, path);
     }
 
     private State GetState()
@@ -131,7 +130,7 @@ public class BFSPlanner
 
     private void ApplyAction(Vector3 action)
     {
-        var force = action.normalized * _forceMag;
+        var force = action.normalized * _simulationForce;
         if (_useRotation)
         {
             var torque = new Vector3(force.x * 3, force.y * 3, force.z);
@@ -145,12 +144,13 @@ public class BFSPlanner
 
     private bool IsDisassembled()
     {
+        var movePartSDF = _partSDFs[_moveId];
         var position = _simulation.GetPosition(_moveId);
         var rotation = _simulation.GetRotation(_moveId);
 
         foreach (var stillId in _stillIds)
         {
-            if (_sdf.CheckCollision(_moveId, stillId, position, _useRotation))
+            if (movePartSDF.CheckCollision(_partSDFs[stillId], position, rotation))
             {
                 return false;
             }
@@ -215,14 +215,19 @@ public class BFSPlanner
 
     private bool StateSimilar(State state1, State state2)
     {
-        var transDist = Vector3.Distance(state1.Position, state2.Position);
+        var statePositionDist = Vector3.Distance(state1.Position, state2.Position);
+        if (statePositionDist >= _statePosDistThreshold)
+        {
+            return false;
+        }
+        
         if (_useRotation)
         {
-            var quatDist = Quaternion.Angle(state1.Rotation, state2.Rotation);
-            return transDist < _transDistTh && quatDist < _quatDistTh;
+            var stateAngleDist = Quaternion.Angle(state1.Rotation, state2.Rotation);
+            return stateAngleDist < _stateAngleDistThreshold;
         }
 
-        return transDist < _transDistTh;
+        return true;
     }
 
     private List<Vector3> GetPath(Tree tree, State endState)
@@ -231,12 +236,6 @@ public class BFSPlanner
         return statePath.Select(state => state.Position).ToList();
     }
 
-    private void InitializeSimulation(Dictionary<string, Mesh> partMeshes)
-    {
-        // Initialize SignedDistanceField and PhysicsSimulation
-        // This will depend on your specific implementation of these components
-    }
-    
     private void CalculateBounds()
     {
         //_minBoxMove = _simulation.GetBounds(_moveId).min;
