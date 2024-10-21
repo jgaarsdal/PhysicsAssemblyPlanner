@@ -22,7 +22,8 @@ public class ProgressiveQueueSequencePlanner
             var id = i.ToString();
             _partIds.Add(id);
             _partMeshes.Add(id, parts[i].Item1);
-            _partSDFs.Add(id, new SignedDistanceField(parts[i].Item1, parts[i].Item2, 224));
+            //_partSDFs.Add(id, new SignedDistanceField(parts[i].Item1, parts[i].Item2, 224));
+            _partSDFs.Add(id, new SignedDistanceField(parts[i].Item2.gameObject));
         }
     }
 

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
 
@@ -18,13 +18,18 @@ public class SignedDistanceField
     public Vector3 Origin => _origin;
     public float CellSize => _cellSize;
 
-    private Mesh _mesh;
+    //private Mesh _mesh;
+    private MeshFilter[] _objectMeshes;
     private Transform _objectTransform;
+    private Vector3[] _vertices;
+    private Vector3Int[] _triangles;
     private float[,,] _distances;
     private int[,,] _closestTriangles;
     private Vector3 _origin;
     private float _cellSize;
     private int _gridSize;
+    private float _boundingBoxPadding;
+    private float _defaultCellSize;
 
     // GPU variables
     private ComputeShader _computeShader;
@@ -32,16 +37,34 @@ public class SignedDistanceField
     private ComputeBuffer _closestTrianglesBuffer;
     private ComputeBuffer _trianglesBuffer;
     
-    public SignedDistanceField(Mesh mesh, Transform meshTransform, int gridSize = 32, float boundingBoxPadding = 0.1f)
+    public SignedDistanceField(GameObject gameObj, float defaultCellSize = 0.05f, float boundingBoxPadding = 0.1f)
     {
-        var bounds = mesh.bounds;
+        _defaultCellSize = defaultCellSize;
+        _boundingBoxPadding = boundingBoxPadding;
+        
+        // TODO: Try with cell size that is different for x,y,z 
+        // TODO: Same for grid size
+        
+        var bounds = CalculateBoundsForAllRenderers(gameObj);
+        if (bounds.size == Vector3.zero)
+        {
+            _cellSize = _defaultCellSize;
+        }
+        else
+        {
+            var cellSizes = GetSDFCellSize(bounds);
+            _cellSize = Mathf.Min(cellSizes.x, cellSizes.y, cellSizes.z);
+        }
+        
         bounds.Expand(boundingBoxPadding);
-
-        _mesh = mesh;
-        _objectTransform = meshTransform;
+        bounds = CalculateGrid(bounds);
+        
+        _objectMeshes = gameObj.GetComponentsInChildren<MeshFilter>();
+        _objectTransform = gameObj.transform;
         _origin = bounds.min;
-        _cellSize = Mathf.Max(bounds.size.x, bounds.size.y, bounds.size.z) / (gridSize - 1);
-        _gridSize = gridSize;
+
+        _vertices = GetAllVertices();
+        _triangles = GetAllTriangles();
         
         if (SupportsComputeShaders())
         {
@@ -86,54 +109,104 @@ public class SignedDistanceField
         
         Debug.Log($"ComputeSDF time on {platformStr}: {Time.realtimeSinceStartup - startTime} seconds");
     }
-    
-    public bool CheckCollision(SignedDistanceField part2Sdf, Vector3 position, Quaternion rotation)
+
+    public void UpdateVertices()
     {
-        // Get the SDFs for both parts
-        var part2Distances = part2Sdf.Distances;
-
-        // Get the transforms for both parts
-        Transform part2Transform = part2Sdf.ObjectTransform;
-
-        // Calculate the relative transform
-        Matrix4x4 E0i = Matrix4x4.TRS(_objectTransform.position, _objectTransform.rotation, Vector3.one);
-        Matrix4x4 part2E0i = Matrix4x4.TRS(part2Transform.position, part2Transform.rotation, Vector3.one);
-        Matrix4x4 relativeTransform = part2E0i.inverse * E0i;
-
-        // Apply the new position and rotation
-        Matrix4x4 newTransform = Matrix4x4.TRS(position, rotation, Vector3.one) * relativeTransform;
-        
-        Vector3 part2Origin = part2Sdf.Origin;
-
-        for (int i = 0; i < GridSize; i++)
+        var bounds = CalculateBoundsForAllRenderers(_objectTransform.gameObject);
+        if (bounds.size == Vector3.zero)
         {
-            for (int j = 0; j < GridSize; j++)
+            _cellSize = _defaultCellSize;
+        }
+        else
+        {
+            var cellSizes = GetSDFCellSize(bounds);
+            _cellSize = Mathf.Min(cellSizes.x, cellSizes.y, cellSizes.z);
+        }
+        
+        bounds.Expand(_boundingBoxPadding);
+        bounds = CalculateGrid(bounds);
+        
+        _objectMeshes = _objectTransform.GetComponentsInChildren<MeshFilter>();
+        _origin = bounds.min;
+
+        _vertices = GetAllVertices();
+    }
+    
+    public bool CheckCollision(SignedDistanceField otherSDF, Vector3 relativePosition, Quaternion relativeRotation)
+    {
+        // Transform from this object's local space to the other object's local space
+        var transformMatrix = Matrix4x4.TRS(relativePosition, relativeRotation, Vector3.one).inverse;
+
+        // Check all vertices of this object against the other object's SDF
+        for (var i = 0; i < _vertices.Length; i++)
+        {
+            // Transform vertex to other object's local space
+            var transformedVertex = transformMatrix.MultiplyPoint3x4(_vertices[i]);
+
+            // Convert to grid coordinates
+            var gridPos = otherSDF.WorldToGridPosition(transformedVertex);
+
+            // Check if the point is inside the other object's grid
+            if (gridPos.x >= 0 && gridPos.x < otherSDF.GridSize &&
+                gridPos.y >= 0 && gridPos.y < otherSDF.GridSize &&
+                gridPos.z >= 0 && gridPos.z < otherSDF.GridSize)
             {
-                for (int k = 0; k < GridSize; k++)
+                // Get the SDF value at this point
+                var distance = otherSDF.GetDistance(gridPos);
+
+                // If the distance is negative or very close to zero, we have a collision
+                if (distance <= float.Epsilon)
                 {
-                    Vector3 x = part2Origin + new Vector3(i, j, k) * _cellSize;
-                    Vector3 xMove = newTransform.inverse.MultiplyPoint3x4(x);
-                    Vector3 xMoveGrid = (xMove - _origin) / _cellSize;
-
-                    if (xMoveGrid.x >= 0 && xMoveGrid.x < GridSize - 1 &&
-                        xMoveGrid.y >= 0 && xMoveGrid.y < GridSize - 1 &&
-                        xMoveGrid.z >= 0 && xMoveGrid.z < GridSize - 1)
-                    {
-                        float d0 = part2Distances[i, j, k];
-                        float d1 = TrilinearInterpolation(_distances, xMoveGrid.x, xMoveGrid.y, xMoveGrid.z);
-
-                        if (d0 < 0 && d1 < 0)
-                        {
-                            // Collision detected
-                            return true; 
-                        }
-                    }
+                    return true;
                 }
             }
         }
 
         // No collision detected
-        return false; 
+        return false;
+    }
+    
+    private Vector3 GetSDFCellSize(Bounds bounds)
+    {
+        var cellSizeX = Mathf.Min(_defaultCellSize, bounds.size.x / 20f);
+        var cellSizeY = Mathf.Min(_defaultCellSize, bounds.size.y / 20f);
+        var cellSizeZ = Mathf.Min(_defaultCellSize, bounds.size.z / 20f);
+        return new Vector3(cellSizeX, cellSizeY, cellSizeZ);
+    }
+    
+    private Bounds CalculateBoundsForAllRenderers(GameObject gameObj)
+    {
+        var renderers = gameObj.GetComponentsInChildren<Renderer>();
+        if (renderers.Length == 0)
+        {
+            Debug.LogError($"SignedDistanceField: No renderers found on gameobject '{gameObj.name}'");
+            return new Bounds();
+        }
+
+        var bounds = renderers[0].bounds;
+        for (var i = 1; i < renderers.Length; i++)
+        {
+            bounds.Encapsulate(renderers[i].bounds);
+        }
+
+        return bounds;
+    }
+    
+    private Bounds CalculateGrid(Bounds gridBounds)
+    {
+        // Find the largest dimension of the bounds
+        var largestDimension = Mathf.Max(gridBounds.size.x, gridBounds.size.y, gridBounds.size.z);
+
+        // Calculate the initial number of cells
+        var numberOfCells = Mathf.CeilToInt(largestDimension / _cellSize);
+
+        // Calculate the expanded size to fit whole cells
+        var expandedSize = numberOfCells * _cellSize;
+
+        _gridSize = numberOfCells;
+        
+        // Create the expanded bounds size
+        return new Bounds(gridBounds.center, Vector3.one * expandedSize);
     }
 
     private async Task ComputeSDFOnGPUAsync()
@@ -192,10 +265,7 @@ public class SignedDistanceField
         _closestTrianglesBuffer.GetData(closestTrianglesArray);
 
         var intersectionCount = new int[_gridSize, _gridSize, _gridSize];
-        var vertices = new List<Vector3>(_mesh.vertices);
-        var triangles = new List<Vector3Int>();
-        var meshTriangles = _mesh.triangles;
-        
+
         await Task.Run(() =>
         {
             Parallel.For(0, _gridSize, (i) =>
@@ -212,18 +282,14 @@ public class SignedDistanceField
             });
 
             // Determine Inside/Outside
-            for (var i = 0; i < meshTriangles.Length; i += 3)
-            {
-                triangles.Add(new Vector3Int(meshTriangles[i], meshTriangles[i + 1], meshTriangles[i + 2]));
-            }
 
             var cellFactor = 1f / _cellSize;
 
-            Parallel.For(0, triangles.Count, (t) =>
+            Parallel.For(0, _triangles.Length, (t) =>
             {
-                var p = vertices[triangles[t].x];
-                var q = vertices[triangles[t].y];
-                var r = vertices[triangles[t].z];
+                var p = _vertices[_triangles[t].x];
+                var q = _vertices[_triangles[t].y];
+                var r = _vertices[_triangles[t].z];
 
                 var fip = (p - _origin).Scale(cellFactor, cellFactor, cellFactor);
                 var fiq = (q - _origin).Scale(cellFactor, cellFactor, cellFactor);
@@ -279,31 +345,22 @@ public class SignedDistanceField
 
     private async Task InitializeBuffers()
     {
-        var vertices = new List<Vector3>(_mesh.vertices);
-        var triangles = new List<Vector3Int>();
-        var meshTriangles = _mesh.triangles;
-        
         var totalSize = _gridSize * _gridSize * _gridSize;
         _distancesBuffer = new ComputeBuffer(totalSize, sizeof(float));
         _closestTrianglesBuffer = new ComputeBuffer(totalSize, sizeof(int));
-        _trianglesBuffer = new ComputeBuffer(meshTriangles.Length / 3, 3 * sizeof(float) * 3);
+        _trianglesBuffer = new ComputeBuffer(_triangles.Length, 3 * sizeof(float) * 3);
         
         _distances = new float[_gridSize, _gridSize, _gridSize];
         _closestTriangles = new int[_gridSize, _gridSize, _gridSize];
-        var triangleData = new Vector3[meshTriangles.Length];
+        var triangleData = new Vector3[_triangles.Length * 3];
         
         await Task.Run(() =>
         {
-            for (var i = 0; i < meshTriangles.Length; i += 3)
+            for (var i = 0; i < _triangles.Length; i++)
             {
-                triangles.Add(new Vector3Int(meshTriangles[i], meshTriangles[i + 1], meshTriangles[i + 2]));
-            }
-            
-            for (var i = 0; i < triangles.Count; i++)
-            {
-                triangleData[i * 3] = vertices[triangles[i].x];
-                triangleData[i * 3 + 1] = vertices[triangles[i].y];
-                triangleData[i * 3 + 2] = vertices[triangles[i].z];
+                triangleData[i * 3] = _vertices[_triangles[i].x];
+                triangleData[i * 3 + 1] = _vertices[_triangles[i].y];
+                triangleData[i * 3 + 2] = _vertices[_triangles[i].z];
             }
         });
 
@@ -315,7 +372,7 @@ public class SignedDistanceField
         _computeShader.SetInt("_GridSize", _gridSize);
         _computeShader.SetFloat("_CellSize", _cellSize);
         _computeShader.SetVector("_Origin", _origin);
-        _computeShader.SetInt("_NumTriangles", triangles.Count);
+        _computeShader.SetInt("_NumTriangles", _triangles.Length);
     }
 
     private void ReleaseBuffers()
@@ -327,15 +384,6 @@ public class SignedDistanceField
 
     private async Task ComputeSDFOnCPUAsync()
     {
-        var vertices = new List<Vector3>(_mesh.vertices);
-        
-        var triangles = new List<Vector3Int>();
-        var meshTriangles = _mesh.triangles;
-        for (var i = 0; i < meshTriangles.Length; i += 3)
-        {
-            triangles.Add(new Vector3Int(meshTriangles[i], meshTriangles[i + 1], meshTriangles[i + 2]));
-        }
-
         // Initialize grid values
         _distances = new float[_gridSize, _gridSize, _gridSize];
         _closestTriangles = new int[_gridSize, _gridSize, _gridSize];
@@ -359,11 +407,11 @@ public class SignedDistanceField
 
         await Task.Run(() =>
         {
-            Parallel.For(0, triangles.Count, (t) =>
+            Parallel.For(0, _triangles.Length, (t) =>
             {
-                var p = vertices[triangles[t].x];
-                var q = vertices[triangles[t].y];
-                var r = vertices[triangles[t].z];
+                var p = _vertices[_triangles[t].x];
+                var q = _vertices[_triangles[t].y];
+                var r = _vertices[_triangles[t].z];
 
                 var fip = (p - _origin).Scale(cellFactor, cellFactor, cellFactor);
                 var fiq = (q - _origin).Scale(cellFactor, cellFactor, cellFactor);
@@ -425,14 +473,14 @@ public class SignedDistanceField
             // Sweep twice in all 8 directions
             for (var pass = 0; pass < 2; pass++)
             {
-                Sweep(triangles, vertices, +1, +1, +1);
-                Sweep(triangles, vertices, -1, -1, -1);
-                Sweep(triangles, vertices, +1, +1, -1);
-                Sweep(triangles, vertices, -1, -1, +1);
-                Sweep(triangles, vertices, +1, -1, +1);
-                Sweep(triangles, vertices, -1, +1, -1);
-                Sweep(triangles, vertices, +1, -1, -1);
-                Sweep(triangles, vertices, -1, +1, +1);
+                Sweep(_triangles, _vertices, +1, +1, +1);
+                Sweep(_triangles, _vertices, -1, -1, -1);
+                Sweep(_triangles, _vertices, +1, +1, -1);
+                Sweep(_triangles, _vertices, -1, -1, +1);
+                Sweep(_triangles, _vertices, +1, -1, +1);
+                Sweep(_triangles, _vertices, -1, +1, -1);
+                Sweep(_triangles, _vertices, +1, -1, -1);
+                Sweep(_triangles, _vertices, -1, +1, +1);
             }
 
             Parallel.For(0, _gridSize, (k) =>
@@ -453,7 +501,7 @@ public class SignedDistanceField
         });
     }
 
-    private void Sweep(List<Vector3Int> triangles, List<Vector3> vertices, int di, int dj, int dk)
+    private void Sweep(Vector3Int[] triangles, Vector3[] vertices, int di, int dj, int dk)
     {
         var i0 = di > 0 ? 1 : _distances.GetLength(0) - 2;
         var i1 = di > 0 ? _distances.GetLength(0) : -1;
@@ -481,7 +529,7 @@ public class SignedDistanceField
         }
     }
     
-    private void CheckNeighbor(List<Vector3Int> triangles, List<Vector3> vertices, Vector3 gx, 
+    private void CheckNeighbor(Vector3Int[] triangles, Vector3[] vertices, Vector3 gx, 
         int i0, int j0, int k0, int i1, int j1, int k1)
     {
         if (_closestTriangles[i1, j1, k1] >= 0)
@@ -647,5 +695,24 @@ public class SignedDistanceField
             Mathf.Lerp(Mathf.Lerp(c000, c100, xd), Mathf.Lerp(c010, c110, xd), yd),
             Mathf.Lerp(Mathf.Lerp(c001, c101, xd), Mathf.Lerp(c011, c111, xd), yd),
             zd);
+    }
+
+    private Vector3[] GetAllVertices()
+    {
+        return _objectMeshes
+            .SelectMany(mf => mf.sharedMesh.vertices
+                .Select(v => mf.transform.TransformPoint(v))).ToArray();
+    }
+
+    private Vector3Int[] GetAllTriangles()
+    {
+        return _objectMeshes.SelectMany(mf => mf.sharedMesh.triangles
+            .Select((value, index) => new { value, index })
+            .GroupBy(x => x.index / 3)
+            .Select(g => new Vector3Int(
+                g.ElementAt(0).value,
+                g.ElementAt(1).value,
+                g.ElementAt(2).value
+            ))).ToArray();
     }
 }

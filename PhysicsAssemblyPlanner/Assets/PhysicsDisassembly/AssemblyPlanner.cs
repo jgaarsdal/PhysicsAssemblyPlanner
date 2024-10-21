@@ -65,7 +65,8 @@ public class AssemblyPlanner : MonoBehaviour
         foreach (var part in _assemblyParts)
         {
             var meshFilter = part.GetComponent<MeshFilter>();
-            var sdfCalculator = new SignedDistanceField(meshFilter.sharedMesh, part.transform, 224, 0.1f);
+            //var sdfCalculator = new SignedDistanceField(meshFilter.sharedMesh, part.transform, 224, 0.1f);
+            var sdfCalculator = new SignedDistanceField(part);
             
             await sdfCalculator.ComputeSDF();
             

@@ -6,48 +6,30 @@ public class SDFVisualizer : MonoBehaviour
     // TODO: So instead of specifying number of cells, number of cells is determined by the cell size and the bounds
 
     // TODO: Also make a script to test the collision between SDFs
-    
+
+    [SerializeField] private float _sdfDefaultCellSize = 0.05f;
     [SerializeField] private float _maxDistance = 1f;
-    [SerializeField] private int _sdfGridSize = 8;
     [SerializeField] private float _sdfBoxPadding = 0.1f;
-    [SerializeField] private Material _material;
     [SerializeField] private bool _useGPU = true;
     [SerializeField] private bool _visualize = true;
     
-    private GameObject[,,] _visualizationCubes;
-
     [ContextMenu("Visualize SDF")]
     public void VisualizeSDFButton()
     {
         VisualizeSDF();
     }
-    
-    [ContextMenu("Clear SDF")]
-    public void ClearSDFButton()
-    {
-        ClearVisualization();
-    }
-    
-    private void OnDestroy()
-    {
-        ClearVisualization();
-    }
 
     public async void VisualizeSDF()
     {
-        var mesh = this.GetComponent<MeshFilter>().sharedMesh;
-        var sdf = new SignedDistanceField(mesh, this.transform, _sdfGridSize, _sdfBoxPadding);
+        var sdf = new SignedDistanceField(this.gameObject, _sdfDefaultCellSize, _sdfBoxPadding);
         await sdf.ComputeSDF(_useGPU);
         
-        ClearVisualization();
-
         if (!_visualize)
         {
             return;
         }
         
         var gridSize = sdf.GridSize;
-        _visualizationCubes = new GameObject[gridSize, gridSize, gridSize];
 
         for (var x = 0; x < gridSize; x++)
         {
@@ -56,52 +38,50 @@ public class SDFVisualizer : MonoBehaviour
                 for (var z = 0; z < gridSize; z++)
                 {
                     var distance = sdf.GetDistance(new Vector3Int(x, y, z));
-                    CreateVisualizationCube(x, y, z, distance, sdf.Origin, sdf.CellSize);
+                    if (distance >= _maxDistance)
+                    {
+                        continue;
+                    }
+                    DrawCell(x, y, z, distance, sdf.Origin, sdf.CellSize);
                 }
             }
         }
-    }
-
-    private void CreateVisualizationCube(int x, int y, int z, float distance, Vector3 origin, float cellSize)
-    {
-        var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        cube.transform.SetParent(transform);
-
-        var position = origin + new Vector3(x * cellSize, y * cellSize, z * cellSize);
-        cube.transform.position = position;
-        
-        //cube.transform.localScale = Vector3.one * _visualizationScale;
-        var globalScale = Vector3.one * cellSize;
-        cube.transform.localScale = Vector3.one;
-        cube.transform.localScale = new Vector3 (globalScale.x / cube.transform.lossyScale.x, globalScale.y / cube.transform.lossyScale.y, globalScale.z / cube.transform.lossyScale.z);
-
-        var renderer = cube.GetComponent<Renderer>();
-        renderer.material = new Material(_material);
-        renderer.material.color = GetDistanceColor(distance);
-
-        _visualizationCubes[x, y, z] = cube;
     }
     
-    public static void SetGlobalScale (Transform transform, Vector3 globalScale)
+    private void DrawCell(int x, int y, int z, float distance, Vector3 origin, float cellSize, float delay=60f)
     {
-        transform.localScale = Vector3.one;
-        transform.localScale = new Vector3 (globalScale.x/transform.lossyScale.x, globalScale.y/transform.lossyScale.y, globalScale.z/transform.lossyScale.z);
-    }
+        var position = origin + new Vector3(x * cellSize, y * cellSize, z * cellSize);
+        var color = GetDistanceColor(distance);
 
-    private void ClearVisualization()
-    {
-        if (_visualizationCubes != null)
-        {
-            foreach (var cube in _visualizationCubes)
-            {
-                if (cube != null)
-                {
-                    DestroyImmediate(cube);
-                }
-            }
+        var b = new Bounds(position, Vector3.one * cellSize);
+        
+        // bottom
+        var p1 = new Vector3(b.min.x, b.min.y, b.min.z);
+        var p2 = new Vector3(b.max.x, b.min.y, b.min.z);
+        var p3 = new Vector3(b.max.x, b.min.y, b.max.z);
+        var p4 = new Vector3(b.min.x, b.min.y, b.max.z);
 
-            _visualizationCubes = null;
-        }
+        Debug.DrawLine(p1, p2, color, delay);
+        Debug.DrawLine(p2, p3, color, delay);
+        Debug.DrawLine(p3, p4, color, delay);
+        Debug.DrawLine(p4, p1, color, delay);
+
+        // top
+        var p5 = new Vector3(b.min.x, b.max.y, b.min.z);
+        var p6 = new Vector3(b.max.x, b.max.y, b.min.z);
+        var p7 = new Vector3(b.max.x, b.max.y, b.max.z);
+        var p8 = new Vector3(b.min.x, b.max.y, b.max.z);
+
+        Debug.DrawLine(p5, p6, color, delay);
+        Debug.DrawLine(p6, p7, color, delay);
+        Debug.DrawLine(p7, p8, color, delay);
+        Debug.DrawLine(p8, p5, color, delay);
+
+        // sides
+        Debug.DrawLine(p1, p5, color, delay);
+        Debug.DrawLine(p2, p6, color, delay);
+        Debug.DrawLine(p3, p7, color, delay);
+        Debug.DrawLine(p4, p8, color, delay);
     }
     
     private Color GetDistanceColor(float distance)
