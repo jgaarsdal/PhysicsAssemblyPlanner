@@ -511,6 +511,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _assemblyRoot: {fileID: 473839353}
+  _useRotation: 0
+  _assemblyTimeoutSecs: 600
+  _partTimeoutSecs: 60
+  _useRandomSeed: 0
+  _fixedSeed: 0
+  _verbose: 1
+  _bfsStatePositionThreshold: 0.05
+  _bfsStateAngleThreshold: 0.5
+  _simulationForce: 50
+  _simulationTimeStep: 0.001
+  _simulationFrameSkip: 100
+  _simulationContactStiffness: 1
+  _simulationContactDamping: 0
+  _sdfDefaultCellSize: 0.05
+  _sdfBoxPadding: 0.1
+  _sdfCollisionPenetrationThreshold: 0.01
+  _useGPU: 1
 --- !u!4 &473839355
 Transform:
   m_ObjectHideFlags: 0
@@ -768,7 +785,6 @@ GameObject:
   m_Component:
   - component: {fileID: 974275549}
   - component: {fileID: 974275547}
-  - component: {fileID: 974275550}
   m_Layer: 0
   m_Name: CollisionTest
   m_TagString: Untagged
@@ -789,6 +805,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _assemblyRoot: {fileID: 974275546}
+  _useRotation: 0
+  _assemblyTimeoutSecs: 600
+  _partTimeoutSecs: 30
+  _useRandomSeed: 0
+  _fixedSeed: 896
+  _verbose: 1
+  _bfsStatePositionThreshold: 0.05
+  _bfsStateAngleThreshold: 0.5
+  _simulationForce: 5
+  _simulationTimeStep: 0.0005
+  _simulationFrameSkip: 90
+  _simulationContactStiffness: 15
+  _simulationContactDamping: 0
+  _sdfDefaultCellSize: 0.05
+  _sdfBoxPadding: 0.1
+  _sdfCollisionPenetrationThreshold: 0.01
+  _useGPU: 1
 --- !u!4 &974275549
 Transform:
   m_ObjectHideFlags: 0
@@ -806,25 +839,6 @@ Transform:
   - {fileID: 543450652694354123}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &974275550
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 974275546}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 04f1a1e839f2b614894268c79e3ce42e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _partA: {fileID: 6974562422204060835}
-  _partB: {fileID: 919132148961460849}
-  _sdfDefaultCellSize: 0.05
-  _maxDistance: 1
-  _sdfBoxPadding: 0.1
-  _useGPU: 1
-  _visualize: 1
 --- !u!1 &1021582442
 GameObject:
   m_ObjectHideFlags: 0
@@ -855,6 +869,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _assemblyRoot: {fileID: 1021582442}
+  _useRotation: 0
+  _assemblyTimeoutSecs: 600
+  _partTimeoutSecs: 60
+  _useRandomSeed: 0
+  _fixedSeed: 0
+  _verbose: 1
+  _bfsStatePositionThreshold: 0.05
+  _bfsStateAngleThreshold: 0.5
+  _simulationForce: 50
+  _simulationTimeStep: 0.001
+  _simulationFrameSkip: 100
+  _simulationContactStiffness: 1
+  _simulationContactDamping: 0
+  _sdfDefaultCellSize: 0.05
+  _sdfBoxPadding: 0.1
+  _sdfCollisionPenetrationThreshold: 0.01
+  _useGPU: 1
 --- !u!4 &1021582444
 Transform:
   m_ObjectHideFlags: 0
@@ -906,7 +937,6 @@ MonoBehaviour:
   _partA: {fileID: 1619721037}
   _partB: {fileID: 528400847}
   _sdfDefaultCellSize: 0.05
-  _maxDistance: 1
   _sdfBoxPadding: 0.1
   _useGPU: 1
   _visualize: 1
@@ -923,6 +953,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _assemblyRoot: {fileID: 1226517434}
+  _useRotation: 0
+  _assemblyTimeoutSecs: 600
+  _partTimeoutSecs: 60
+  _useRandomSeed: 0
+  _fixedSeed: 0
+  _verbose: 1
+  _bfsStatePositionThreshold: 0.05
+  _bfsStateAngleThreshold: 0.5
+  _simulationForce: 50
+  _simulationTimeStep: 0.001
+  _simulationFrameSkip: 100
+  _simulationContactStiffness: 1
+  _simulationContactDamping: 0
+  _sdfDefaultCellSize: 0.05
+  _sdfBoxPadding: 0.1
+  _sdfCollisionPenetrationThreshold: 0.01
+  _useGPU: 1
 --- !u!4 &1226517437
 Transform:
   m_ObjectHideFlags: 0
@@ -1551,27 +1598,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c120c3f8d5ca1d14e9ce768ace1a3671, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _assemblyParts:
-  - {fileID: 7655449186082031831}
-  - {fileID: 358387749294164570}
-  - {fileID: 1992482807045229659}
-  _forceMagnitude: 100
-  _torqueMagnitude: 10
-  _timeStep: 0.1
-  _rotationStep: 15
-  _similarityThreshold: 0.05
-  _maxBFSDepth: 10
-  _timeout: 30
-  _collisionMargin: 0.01
-  _staticFrictionCoefficient: 0.6
-  _kineticFrictionCoefficient: 0.4
-  _gravity: {x: 0, y: -9.81, z: 0}
-  _airDensity: 1.225
-  _dragCoefficient: 0.47
-  _heuristicWeight: 1
-  _maxIterations: 1000
-  _maxDepth: 50
-  _parallelTasks: 8
 --- !u!4 &4275878606085165246
 Transform:
   m_ObjectHideFlags: 0

@@ -2,7 +2,6 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using DG.Tweening;
 using PhysicsDisassembly.SDF;
 
 namespace PhysicsDisassembly
@@ -38,19 +37,7 @@ namespace PhysicsDisassembly
         public (string status, List<Path> sequence, int seqCount, float totalDurationSecs) PlanSequence(int randomSeed)
         {
             UnityEngine.Random.InitState(randomSeed);
-
-            var planner = new BFSPlanner("0", new List<string> { "1" }, _configuration.DisassemblyUseRotation, 
-                _partObjects, _partSDFs, _configuration.BFSPlannerConfiguration, _configuration.PhysicsSimulationConfiguration);
-            var (testStatus, testDuration, testPath) = planner.Plan(_configuration.PartTimeoutSecs, 1);
-
-            Debug.Log($"Finished with status '{testStatus}' in {testDuration} seconds and {testPath.Positions.Count} points");
-
-            _partObjects["0"].transform.DOPath(testPath.Positions.ToArray(), 5f).SetEase(Ease.InOutCubic).SetLoops(-1, LoopType.Yoyo);
             
-            return (testStatus, new List<Path> { testPath }, 1, testDuration);
-
-
-
             var seqStatus = "Failure";
             var sequence = new List<Path>();
             var seqCount = 0;
@@ -63,10 +50,10 @@ namespace PhysicsDisassembly
             while (true)
             {
                 var allIds = new List<string>(_partIds);
-
+                
                 var (moveId, maxDepth) = activeQueue[0];
                 activeQueue.RemoveAt(0);
-
+                
                 var stillIds = allIds.Where(id => id != moveId).ToList();
 
                 var (status, durationSecs, path) = PlanPath(moveId, stillIds, false, maxDepth);
@@ -133,16 +120,16 @@ namespace PhysicsDisassembly
             return (seqStatus, sequence, seqCount, totalDurationSecs);
         }
 
-        private void Shuffle<T>(List<T> list)
+        private void Shuffle<T>(IList<T> list)
         {
-            var n = list.Count;
-            while (n > 1)
+            var count = list.Count;
+            var last = count - 1;
+            for (var i = 0; i < last; ++i)
             {
-                n--;
-                var k = UnityEngine.Random.Range(0, n + 1);
-                T value = list[k];
-                list[k] = list[n];
-                list[n] = value;
+                var randIndex = UnityEngine.Random.Range(i, count);
+                var tmpValue = list[i];
+                list[i] = list[randIndex];
+                list[randIndex] = tmpValue;
             }
         }
 
@@ -151,7 +138,7 @@ namespace PhysicsDisassembly
             var planner = new BFSPlanner(moveId, stillIds, rotation, _partObjects, _partSDFs, 
                 _configuration.BFSPlannerConfiguration, _configuration.PhysicsSimulationConfiguration);
             
-            var (status, tPlan, path) = planner.Plan(_configuration.PartTimeoutSecs, maxDepth);
+            var (status, tPlan, path) = planner.Plan(_configuration.PartTimeoutSecs, maxDepth, _configuration.Verbose);
 
             return (status, tPlan, path);
         }

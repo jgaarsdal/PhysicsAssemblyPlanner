@@ -89,7 +89,7 @@ namespace PhysicsDisassembly.Simulation
             Rotation = NormalizeQuaternion(Rotation);
 
             // Calculate transform position (pivot point) from center position
-            var pivotPosition = Position - (Rotation * _centerOffset);
+            var pivotPosition = Position - Rotation * _centerOffset;
             var transformMatrix = Matrix4x4.TRS(pivotPosition, Rotation, Scale);
 
             // Update world vertices and bounding box

@@ -1,4 +1,7 @@
+using System;
+using System.Collections.Generic;
 using System.Linq;
+using DG.Tweening;
 using UnityEngine;
 
 namespace PhysicsDisassembly
@@ -9,7 +12,9 @@ namespace PhysicsDisassembly
         [SerializeField] private GameObject _assemblyRoot = default;
         [SerializeField] private bool _useRotation = false;
         [SerializeField] private float _assemblyTimeoutSecs = 600f;
-        [SerializeField] private float _partTimeoutSecs = 60f;
+        [SerializeField] private float _partTimeoutSecs = 30f;
+        [SerializeField] private bool _useRandomSeed = true;
+        [SerializeField] private int _fixedSeed = 896;
         [SerializeField] private bool _verbose = true;
         
         [Header("BFSPlanner Settings")]
@@ -17,10 +22,10 @@ namespace PhysicsDisassembly
         [SerializeField] private float _bfsStateAngleThreshold = 0.5f;
         
         [Header("Physics Simulation Settings")]
-        [SerializeField] private float _simulationForce = 50f;
-        [SerializeField] private float _simulationTimeStep = 0.001f; //0.016f; 
-        [SerializeField] private int _simulationFrameSkip = 100;
-        [SerializeField] private float _simulationContactStiffness = 1f;
+        [SerializeField] private float _simulationForce = 5f;
+        [SerializeField] private float _simulationTimeStep = 0.0005f; 
+        [SerializeField] private int _simulationFrameSkip = 90;
+        [SerializeField] private float _simulationContactStiffness = 15f;
         [SerializeField] private float _simulationContactDamping = 0f;
         
         [Header("SDF Collision Settings")]
@@ -29,15 +34,23 @@ namespace PhysicsDisassembly
         [SerializeField] private float _sdfCollisionPenetrationThreshold = 0.01f;
         [SerializeField] private bool _useGPU = true;
         
-        
         private ProgressiveQueueSequencePlanner _assemblyPlanner;
-    
-        private async void Start()
+        private GameObject[] _assemblyParts;
+        private Tween[] _disassemblyTweens;
+        private List<Path> _disassemblySequence;
+
+        private void Start()
         {
-            var assemblyParts = _assemblyRoot.GetComponentsInChildren<MeshFilter>()
+            _assemblyParts = _assemblyRoot.GetComponentsInChildren<MeshFilter>()
                 .Select(p => p.gameObject)
                 .ToArray();
-
+            
+            //Debug.Log("Finished initializing");
+        }
+    
+        [ContextMenu("Run Planner")]
+        public async void RunAssemblyPlannerButton()
+        {
             var configuration = new AssemblyPlanningConfiguration()
             {
                 DisassemblyUseRotation = _useRotation,
@@ -66,17 +79,61 @@ namespace PhysicsDisassembly
                 Verbose = _verbose
             };
             
-            _assemblyPlanner = new ProgressiveQueueSequencePlanner(assemblyParts, configuration);
+            _assemblyPlanner = new ProgressiveQueueSequencePlanner(_assemblyParts, configuration);
             await _assemblyPlanner.InitializeSignedDistanceFields();
-        
-            Debug.Log("Finished initializing");
+
+            var randomSeed = _useRandomSeed ? DateTime.Now.Millisecond : _fixedSeed;
+            var (status, sequence, seqCount, totalDuration) = _assemblyPlanner.PlanSequence(randomSeed);
+
+            Debug.Log($"Finished planning with status '{status}' and random seed '{randomSeed}'");
+            
+            _disassemblySequence = sequence;
+            
+            ClearTweens();
+            
+            _disassemblyTweens = new Tween[_disassemblySequence.Count];
+            for (var i = 0; i < _disassemblySequence.Count; i++)
+            {
+                _disassemblyTweens[i] = _disassemblySequence[i].PartObject.transform
+                    .DOPath(_disassemblySequence[i].Positions.ToArray(), 5f)
+                    .SetEase(Ease.InOutCubic)
+                    .SetLoops(-1, LoopType.Yoyo);
+            }
         }
-    
-        [ContextMenu("Run Planner")]
-        public void RunAssemblyPlannerButton()
+        
+        [ContextMenu("Reset Planner")]
+        public void ResetAssemblyPlannerButton()
         {
-            var (status, sequence, seqCount, totalDuration) = _assemblyPlanner.PlanSequence(3);
-            Debug.Log(status);
+            ClearTweens();
+
+            if (_disassemblySequence == null)
+            {
+                return;
+            }
+            
+            foreach (var disassembly in _disassemblySequence)
+            {
+                disassembly.PartObject.transform.position = disassembly.Positions[0];
+                disassembly.PartObject.transform.rotation = disassembly.Orientations[0];
+            }
+        }
+
+        private void ClearTweens()
+        {
+            if (_disassemblyTweens == null)
+            {
+                return;
+            }
+            
+            foreach (var tween in _disassemblyTweens)
+            {
+                if (tween != null && tween.IsActive())
+                {
+                    tween.Kill();
+                }
+            }
+            
+            _disassemblyTweens = null;
         }
     }
 }

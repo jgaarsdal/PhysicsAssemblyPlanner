@@ -5,14 +5,16 @@ namespace PhysicsDisassembly
 {
     public struct State : IEquatable<State>
     {
+        public Vector3 PivotPosition { get; set; }
         public Vector3 Position { get; set; }
         public Quaternion Rotation { get; set; }
         public Vector3 Velocity { get; set; }
         public Vector3 AngularVelocity { get; set; }
 
-        public State(Vector3 position, Quaternion rotation, Vector3 velocity, Vector3 angularVelocity)
+        public State(Vector3 position, Vector3 pivotPosition, Quaternion rotation, Vector3 velocity, Vector3 angularVelocity)
         {
             Position = position;
+            PivotPosition = pivotPosition;
             Rotation = rotation;
             Velocity = velocity;
             AngularVelocity = angularVelocity;
@@ -21,6 +23,7 @@ namespace PhysicsDisassembly
         public bool Equals(State other)
         {
             return Position.Equals(other.Position) &&
+                   PivotPosition.Equals(other.PivotPosition) &&
                    Rotation.Equals(other.Rotation) &&
                    Velocity.Equals(other.Velocity) &&
                    AngularVelocity.Equals(other.AngularVelocity);
@@ -33,7 +36,7 @@ namespace PhysicsDisassembly
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(Position, Rotation, Velocity, AngularVelocity);
+            return HashCode.Combine(Position, PivotPosition, Rotation, Velocity, AngularVelocity);
         }
     }
 }
