@@ -16,30 +16,31 @@ namespace PhysicsDisassembly.SDF
     {
         public Transform ObjectTransform => _objectTransform;
         public Vector3[] WorldVertices => _vertices;
+        public Vector3Int[] Triangles => _triangles;
         public float[,,] Distances => _distances;
         public int GridSize => _gridSize;
         public Vector3 Origin => _origin;
         public float CellSize => _cellSize;
         
         private MeshFilter[] _objectMeshes;
-        private Transform _objectTransform;
         private Vector3[] _vertices;
-        private Vector3Int[] _triangles;
         private float[,,] _distances;
         private int[,,] _closestTriangles;
         private Vector3 _origin;
         private float _cellSize;
         private int _gridSize;
-        private float _boundingBoxPadding;
-        private float _defaultCellSize;
-        private float _collisionPenetrationThreshold = 0.01f;
-        private bool _useGPU = true;
-
+        private readonly Transform _objectTransform;
+        private readonly Vector3Int[] _triangles;
+        private readonly float _boundingBoxPadding;
+        private readonly float _defaultCellSize;
+        private readonly float _collisionPenetrationThreshold;
+        private readonly bool _useGPU;
+        
         // GPU variables
-        private ComputeShader _computeShader;
         private ComputeBuffer _distancesBuffer;
         private ComputeBuffer _closestTrianglesBuffer;
         private ComputeBuffer _trianglesBuffer;
+        private readonly ComputeShader _computeShader;
 
         public SignedDistanceField(GameObject gameObj, SDFCollisionConfiguration configuration)
         : this(gameObj, configuration.SDFDefaultCellSize, configuration.SDFBoxPadding, configuration.SDFCollisionPenetrationThreshold, configuration.SDFUseGPU)
@@ -122,11 +123,6 @@ namespace PhysicsDisassembly.SDF
         
         public void UpdateVertices()
         {
-            // TODO: test the bounds calculation
-            // TODO: Is this because it is rotated? Should I use OBB instead of bounds?
-            // TODO: Does that even matter when I use it for the grid?
-            // TODO: I should visualize the grid...
-            
             var bounds = CalculateBoundsForAllRenderers(_objectTransform.gameObject);
             if (bounds.size == Vector3.zero)
             {
@@ -154,30 +150,37 @@ namespace PhysicsDisassembly.SDF
         
         public bool CheckCollision(SignedDistanceField otherSDF, Vector3[] worldVertices)
         {
+            var collisionFound = false;
+            var lockObj = new object();
+
             // Check all vertices of this object against the other object's SDF
-            foreach (var vertex in worldVertices)
-            {
-                // Convert to grid coordinates
-                var gridPos = otherSDF.WorldToGridPosition(vertex);
-
-                // Check if the point is inside the other object's grid
-                if (gridPos.x >= 0 && gridPos.x < otherSDF.GridSize &&
-                    gridPos.y >= 0 && gridPos.y < otherSDF.GridSize &&
-                    gridPos.z >= 0 && gridPos.z < otherSDF.GridSize)
+            Parallel.ForEach(worldVertices, 
+                (vertex, state) =>
                 {
-                    // Get the SDF value at this point
-                    var distance = otherSDF.GetDistance(gridPos);
+                    // Convert to grid coordinates
+                    var gridPos = otherSDF.WorldToGridPosition(vertex);
 
-                    // If the distance is negative or very close to zero, we have a collision
-                    if (distance <= _collisionPenetrationThreshold)
+                    // Check if the point is inside the other object's grid
+                    if (gridPos.x >= 0 && gridPos.x < otherSDF.GridSize &&
+                        gridPos.y >= 0 && gridPos.y < otherSDF.GridSize &&
+                        gridPos.z >= 0 && gridPos.z < otherSDF.GridSize)
                     {
-                        return true;
+                        // Get the SDF value at this point
+                        var distance = otherSDF.GetDistance(gridPos);
+                        
+                        // If the distance is negative or very close to zero, we have a collision
+                        if (distance <= _collisionPenetrationThreshold)
+                        {
+                            lock (lockObj)
+                            {
+                                collisionFound = true;
+                            }
+                            state.Stop();
+                        }
                     }
-                }
-            }
+                });
 
-            // No collision detected
-            return false;
+            return collisionFound;
         }
         
         private Vector3 GetSDFCellSize(Bounds bounds)
@@ -681,34 +684,6 @@ namespace PhysicsDisassembly.SDF
         private bool SupportsComputeShaders()
         {
             return SystemInfo.supportsComputeShaders;
-        }
-
-        private float TrilinearInterpolation(float[,,] distances, float x, float y, float z)
-        {
-            int x0 = Mathf.FloorToInt(x);
-            int y0 = Mathf.FloorToInt(y);
-            int z0 = Mathf.FloorToInt(z);
-            int x1 = x0 + 1;
-            int y1 = y0 + 1;
-            int z1 = z0 + 1;
-
-            float xd = x - x0;
-            float yd = y - y0;
-            float zd = z - z0;
-
-            float c000 = distances[x0, y0, z0];
-            float c100 = distances[x1, y0, z0];
-            float c010 = distances[x0, y1, z0];
-            float c110 = distances[x1, y1, z0];
-            float c001 = distances[x0, y0, z1];
-            float c101 = distances[x1, y0, z1];
-            float c011 = distances[x0, y1, z1];
-            float c111 = distances[x1, y1, z1];
-
-            return Mathf.Lerp(
-                Mathf.Lerp(Mathf.Lerp(c000, c100, xd), Mathf.Lerp(c010, c110, xd), yd),
-                Mathf.Lerp(Mathf.Lerp(c001, c101, xd), Mathf.Lerp(c011, c111, xd), yd),
-                zd);
         }
 
         private Vector3[] GetAllVertices()

@@ -19,12 +19,30 @@ namespace PhysicsDisassembly.Simulation
             _configuration = configuration;
         }
 
-        public void CheckAndResolveCollision(SDFCollisionPart other)
+        // TODO: Try to return a force instead in order to parallelize (and possibly move to GPU)
+        
+        public Vector3 CheckAndResolveCollision(SDFCollisionPart other)
         {
+            var force = Vector3.zero;
+            
             // Sample contact points using vertices of this part
             var vertices = _simulation.GetVertices(_partId);
             var velocity = _simulation.GetVelocity(_partId);
 
+            /*var triangles = _sdf.Triangles;
+            var tris = new int[triangles.Length * 3];
+
+            for (var i = 0; i < triangles.Length; i++)
+            {
+                tris[i * 3] = triangles[i].x;
+                tris[i * 3 + 1] = triangles[i].y;
+                tris[i * 3 + 2] = triangles[i].z;
+            }
+            
+            var contactPoints = PointCloudSampler.GetPointCloud(vertices, tris, 1024,
+                PointCloudSampler.SampleMethod.WeightedBarycentricCoordinates, false);*/
+            
+            
             foreach (var vertex in vertices)
             {
                 // Get point velocity including angular contribution
@@ -51,14 +69,47 @@ namespace PhysicsDisassembly.Simulation
                     var contactForce = ((-_configuration.SimulationContactStiffness + _configuration.SimulationContactDamping * penetrationSpeed) * penetrationDistance) * normal;
 
                     // Apply force and torque
-                    _simulation.ApplyForceAtPoint(_partId, contactForce, vertex);
-                    /*_simulation.ApplyForceAndTorque(
-                        _partId,
-                        contactForce,
-                        Vector3.Cross(r, contactForce)
-                    );*/
+                    force += contactForce;
                 }
             }
+
+            return force;
+
+            /*
+            // Sample contact points using vertices of this part
+            var vertices = _simulation.GetVertices(_partId);
+            var velocity = _simulation.GetVelocity(_partId);
+
+            foreach (var vertex in vertices)
+            {
+                // Get point velocity including angular contribution
+                var pointVelocity = velocity;
+
+                // Transform vertex to other object's local space and get grid position
+                var gridPos = other._sdf.WorldToGridPosition(vertex);
+
+                // Get penetration distance (equation from paper: d = min(g(x), 0))
+                var distance = other._sdf.GetDistance(gridPos);
+                var penetrationDistance = Mathf.Min(distance, 0f);
+
+                // Only process if there's penetration
+                if (penetrationDistance < 0f)
+                {
+                    // Calculate contact normal (gradient of SDF)
+                    var normal = CalculateSDFGradient(other, vertex);
+
+                    // Calculate penetration speed (ḋ = ∇g(x) · ẋ from paper)
+                    var penetrationSpeed = Vector3.Dot(normal, pointVelocity);
+
+                    // Calculate contact force using penalty model from paper:
+                    // f_c = (-k_n + k_d * ḋ)d * n
+                    var contactForce = ((-_configuration.SimulationContactStiffness + _configuration.SimulationContactDamping * penetrationSpeed) * penetrationDistance) * normal;
+
+                    // Apply force and torque
+                    _simulation.ApplyForceAtPoint(_partId, contactForce, vertex);
+                }
+            }
+            */
         }
 
         private Vector3 CalculateSDFGradient(SDFCollisionPart other, Vector3 worldPos)

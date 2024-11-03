@@ -147,7 +147,9 @@ namespace PhysicsDisassembly
 
         private void ApplyAction(Vector3 action)
         {
+            Debug.Log("force sim: " + _physicsConfiguration.SimulationForce);
             var force = action.normalized * _physicsConfiguration.SimulationForce;
+            Debug.Log("force: " + force);
             if (_useRotation)
             {
                 var torque = new Vector3(force.x * 3, force.y * 3, force.z);

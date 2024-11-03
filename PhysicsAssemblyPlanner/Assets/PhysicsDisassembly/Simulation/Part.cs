@@ -92,7 +92,6 @@ namespace PhysicsDisassembly.Simulation
             var pivotPosition = Position - Rotation * _centerOffset;
             var transformMatrix = Matrix4x4.TRS(pivotPosition, Rotation, Scale);
 
-            // Update world vertices and bounding box
             _worldVertices[0] = transformMatrix.MultiplyPoint3x4(_localVertices[0]);
             var tempBounds = new Bounds(_worldVertices[0], Vector3.zero);
             for (var i = 1; i < _localVertices.Length; i++)
@@ -100,7 +99,7 @@ namespace PhysicsDisassembly.Simulation
                 _worldVertices[i] = transformMatrix.MultiplyPoint3x4(_localVertices[i]);
                 tempBounds.Encapsulate(_worldVertices[i]);
             }
-
+            
             Bounds = tempBounds;
         }
 
@@ -110,10 +109,30 @@ namespace PhysicsDisassembly.Simulation
             Velocity += Force * timeStep;
             AngularVelocity += Torque * timeStep;
 
+            // TODO Tweak settings
+            
+            // Apply damping
+            //Velocity = ApplyDamping(Velocity, 0.99f);
+            //AngularVelocity = ApplyDamping(AngularVelocity, 0.98f);
+            
+            // Clamp linear velocity while preserving direction
+            Debug.Log("Velocity.magnitude 1: " + Velocity.magnitude);
+            if (Velocity.magnitude > 0.01f)
+            {
+                Velocity = Velocity.normalized * 0.01f;
+            }
+            Debug.Log("Velocity.magnitude 2: " + Velocity.magnitude);
+
+            // Clamp angular velocity while preserving axis of rotation
+            //if (AngularVelocity.magnitude > 5f)
+            //{
+            //    AngularVelocity = AngularVelocity.normalized * 5f;
+            //}
+            
             // Update positions using new velocities
             Position += Velocity;
             Rotation *= Quaternion.Euler(AngularVelocity);
-
+            
             // Reset forces and torques
             Force = Vector3.zero;
             Torque = Vector3.zero;
@@ -138,6 +157,11 @@ namespace PhysicsDisassembly.Simulation
         public Vector3[] GetVertices(bool worldSpace = true)
         {
             return worldSpace ? _worldVertices : _localVertices;
+        }
+        
+        private Vector3 ApplyDamping(Vector3 velocity, float dampingFactor = 0.98f)
+        {
+            return velocity * dampingFactor;
         }
     }
 }

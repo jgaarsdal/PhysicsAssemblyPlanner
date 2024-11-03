@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using PhysicsDisassembly.SDF;
 
 namespace PhysicsDisassembly.Simulation
@@ -12,8 +13,8 @@ namespace PhysicsDisassembly.Simulation
         private PhysicsSimulationConfiguration _configuration;
         private bool _useRotation;
 
-        public PhysicsSimulation(Dictionary<string, GameObject> partObjects,
-            Dictionary<string, SignedDistanceField> partSDFs, bool useRotation, PhysicsSimulationConfiguration configuration)
+        public PhysicsSimulation(Dictionary<string, GameObject> partObjects, Dictionary<string, SignedDistanceField> partSDFs, 
+            bool useRotation, PhysicsSimulationConfiguration configuration)
         {
             _configuration = configuration;
             _useRotation = useRotation;
@@ -24,7 +25,7 @@ namespace PhysicsDisassembly.Simulation
                 var partObject = kvp.Value;
                 var partTransform = partObject.transform;
 
-                _parts[partId] = new Part(partObject.GetComponent<MeshFilter>().sharedMesh, partTransform.position,
+                _parts[partId] = new Part(partObject.GetComponentInChildren<MeshFilter>().sharedMesh, partTransform.position,
                     partTransform.rotation, partTransform.localScale);
                 _collisionParts[partId] = new SDFCollisionPart(partId, this, partSDFs[partId], _configuration);
             }
@@ -136,12 +137,26 @@ namespace PhysicsDisassembly.Simulation
                 .ToArray();
 
             var movingPart = _collisionParts[movingPartId];
+            var force = Vector3.zero;
 
             // Check collision with all still parts
-            foreach (var stillPart in stillCollisionParts)
+            /*foreach (var stillPart in stillCollisionParts)
             {
-                movingPart.CheckAndResolveCollision(stillPart);
-            }
+                force += movingPart.CheckAndResolveCollision(stillPart);
+            }*/
+
+            var lockObj = new object();
+            Parallel.ForEach(stillCollisionParts, (stillPart) =>
+            {
+                var tempForce = movingPart.CheckAndResolveCollision(stillPart);
+
+                lock (lockObj)
+                {
+                    force += tempForce;
+                }
+            });
+            
+            ApplyForce(movingPartId, force);
         }
 
         public Vector3[] GetVertices(string partId, bool worldSpace = true)

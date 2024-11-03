@@ -13,25 +13,36 @@ namespace PhysicsDisassembly
         private Dictionary<string, SignedDistanceField> _partSDFs = new Dictionary<string, SignedDistanceField>();
         private AssemblyPlanningConfiguration _configuration;
         
-        private readonly string[] _successStatus = { "Success", "Start with goal" };
+        private readonly string[] _successStatus = { "Success", "Already disassembled" };
         private readonly string[] _failureStatus = { "Timeout", "Failure" };
 
-        public ProgressiveQueueSequencePlanner(GameObject[] parts, AssemblyPlanningConfiguration configuration)
+        public ProgressiveQueueSequencePlanner(GameObject assemblyRoot, AssemblyPlanningConfiguration configuration)
         {
             _configuration = configuration;
             
-            for (var i = 0; i < parts.Length; i++)
+            var assemblyParts = assemblyRoot.GetComponentsInChildren<MeshFilter>()
+                .Select(mf => GetAssemblyPartRootRecursive(assemblyRoot.transform, mf.transform).gameObject)
+                .ToArray();
+            
+            for (var i = 0; i < assemblyParts.Length; i++)
             {
                 var id = i.ToString();
                 _partIds.Add(id);
-                _partObjects.Add(id, parts[i]);
-                _partSDFs.Add(id, new SignedDistanceField(parts[i], _configuration.SDFCollisionConfiguration));
+                _partObjects.Add(id, assemblyParts[i]);
+                _partSDFs.Add(id, new SignedDistanceField(assemblyParts[i], _configuration.SDFCollisionConfiguration));
             }
         }
 
         public async Task InitializeSignedDistanceFields()
         {
-            await Task.WhenAll(_partSDFs.Values.Select(p => p.ComputeSDF()));
+            Debug.Log("Start Initialize Signed Distance Fields");
+
+            foreach (var partSDF in _partSDFs.Values)
+            {
+                await partSDF.ComputeSDF();
+            }
+
+            Debug.Log("Finished Initialize Signed Distance Fields");
         }
 
         public (string status, List<Path> sequence, int seqCount, float totalDurationSecs) PlanSequence(int randomSeed)
@@ -47,10 +58,10 @@ namespace PhysicsDisassembly
             Shuffle(activeQueue);
             var inactiveQueue = new List<(string id, int depth)>();
 
+            var allIds = new List<string>(_partIds);
+            
             while (true)
             {
-                var allIds = new List<string>(_partIds);
-                
                 var (moveId, maxDepth) = activeQueue[0];
                 activeQueue.RemoveAt(0);
                 
@@ -74,7 +85,7 @@ namespace PhysicsDisassembly
                     Debug.Log(
                         $"# trials: {seqCount} | Move id: {moveId} | Status: {status} | Current planning time: {durationSecs} | Total planning time: {totalDurationSecs}");
                 }
-
+                
                 if (_successStatus.Contains(status))
                 {
                     allIds.Remove(moveId);
@@ -120,6 +131,17 @@ namespace PhysicsDisassembly
             return (seqStatus, sequence, seqCount, totalDurationSecs);
         }
 
+        private Transform GetAssemblyPartRootRecursive(Transform assemblyRoot, Transform assemblyPart)
+        {
+            if (assemblyPart.parent == assemblyRoot || 
+                assemblyPart.parent.GetComponentsInChildren<MeshFilter>().Length > 1)
+            {
+                return assemblyPart;
+            }
+
+            return GetAssemblyPartRootRecursive(assemblyRoot, assemblyPart.parent);
+        }
+        
         private void Shuffle<T>(IList<T> list)
         {
             var count = list.Count;

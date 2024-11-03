@@ -9,6 +9,7 @@ namespace PhysicsDisassembly.SDF
         [SerializeField] private GameObject _partB = default;
         [Space] [SerializeField] private float _sdfDefaultCellSize = 0.05f;
         [SerializeField] private float _sdfBoxPadding = 0.1f;
+        [SerializeField] private float _sdfCollisionPenetrationThreshold = 0.01f;
         [SerializeField] private bool _useGPU = true;
         [SerializeField] private bool _visualize = true;
 
@@ -29,8 +30,8 @@ namespace PhysicsDisassembly.SDF
 
         private async void ComputeSDF()
         {
-            _sdfPartA = new SignedDistanceField(_partA, _sdfDefaultCellSize, _sdfBoxPadding, 0.01f, _useGPU);
-            _sdfPartB = new SignedDistanceField(_partB, _sdfDefaultCellSize, _sdfBoxPadding, 0.01f, _useGPU);
+            _sdfPartA = new SignedDistanceField(_partA, _sdfDefaultCellSize, _sdfBoxPadding, _sdfCollisionPenetrationThreshold, _useGPU);
+            _sdfPartB = new SignedDistanceField(_partB, _sdfDefaultCellSize, _sdfBoxPadding, _sdfCollisionPenetrationThreshold, _useGPU);
 
             await Task.WhenAll(_sdfPartA.ComputeSDF(), _sdfPartB.ComputeSDF());
         }
@@ -39,9 +40,7 @@ namespace PhysicsDisassembly.SDF
         {
             _sdfPartA.UpdateVertices();
             _sdfPartB.UpdateVertices();
-
-
-
+            
             var isColliding = _sdfPartA.CheckCollision(_sdfPartB);
             if (isColliding)
             {
@@ -61,6 +60,28 @@ namespace PhysicsDisassembly.SDF
             var bestPoint = Vector3.zero;
             var bestSDF = 0f;
 
+            /*var verts = _sdfPartA.WorldVertices;
+            var tris = new int[_sdfPartA.Triangles.Length * 3];
+
+            for (var i = 0; i < _sdfPartA.Triangles.Length; i++)
+            {
+                tris[i * 3] = _sdfPartA.Triangles[i].x;
+                tris[i * 3 + 1] = _sdfPartA.Triangles[i].y;
+                tris[i * 3 + 2] = _sdfPartA.Triangles[i].z;
+            }
+            
+            var contactPoints = PointCloudSampler.GetPointCloud(verts, tris, 1024,
+                PointCloudSampler.SampleMethod.WeightedBarycentricCoordinates, false);*/
+
+            /*if (_visualize)
+            {
+                var center = GetObjectCenter(_sdfPartA.WorldVertices);
+                foreach (var contactPoint in contactPoints)
+                {
+                    Debug.DrawLine(center, contactPoint, Color.blue, 60f);
+                }
+            }*/
+            
             // Sample vertices to find the point of deepest penetration
             foreach (var vertex in _sdfPartA.WorldVertices)
             {

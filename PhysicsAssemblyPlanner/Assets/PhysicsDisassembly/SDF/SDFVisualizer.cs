@@ -45,6 +45,7 @@ namespace PhysicsDisassembly.SDF
                             continue;
                         }
 
+                        if (distance <= 0f)
                         DrawCell(x, y, z, distance, sdf.Origin, sdf.CellSize);
                     }
                 }

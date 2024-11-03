@@ -35,18 +35,8 @@ namespace PhysicsDisassembly
         [SerializeField] private bool _useGPU = true;
         
         private ProgressiveQueueSequencePlanner _assemblyPlanner;
-        private GameObject[] _assemblyParts;
         private Tween[] _disassemblyTweens;
         private List<Path> _disassemblySequence;
-
-        private void Start()
-        {
-            _assemblyParts = _assemblyRoot.GetComponentsInChildren<MeshFilter>()
-                .Select(p => p.gameObject)
-                .ToArray();
-            
-            //Debug.Log("Finished initializing");
-        }
     
         [ContextMenu("Run Planner")]
         public async void RunAssemblyPlannerButton()
@@ -79,7 +69,7 @@ namespace PhysicsDisassembly
                 Verbose = _verbose
             };
             
-            _assemblyPlanner = new ProgressiveQueueSequencePlanner(_assemblyParts, configuration);
+            _assemblyPlanner = new ProgressiveQueueSequencePlanner(_assemblyRoot, configuration);
             await _assemblyPlanner.InitializeSignedDistanceFields();
 
             var randomSeed = _useRandomSeed ? DateTime.Now.Millisecond : _fixedSeed;
@@ -97,7 +87,8 @@ namespace PhysicsDisassembly
                 _disassemblyTweens[i] = _disassemblySequence[i].PartObject.transform
                     .DOPath(_disassemblySequence[i].Positions.ToArray(), 5f)
                     .SetEase(Ease.InOutCubic)
-                    .SetLoops(-1, LoopType.Yoyo);
+                    .SetLoops(-1, LoopType.Yoyo)
+                    .SetDelay(i > 0 ? 5f : 0f);
             }
         }
         
