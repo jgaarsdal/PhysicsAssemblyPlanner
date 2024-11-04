@@ -26,7 +26,7 @@ namespace PhysicsDisassembly.Simulation
                 var partTransform = partObject.transform;
 
                 _parts[partId] = new Part(partObject.GetComponentInChildren<MeshFilter>().sharedMesh, partTransform.position,
-                    partTransform.rotation, partTransform.localScale);
+                    partTransform.rotation, partTransform.localScale, configuration);
                 _collisionParts[partId] = new SDFCollisionPart(partId, this, partSDFs[partId], _configuration);
             }
         }
@@ -139,12 +139,6 @@ namespace PhysicsDisassembly.Simulation
             var movingPart = _collisionParts[movingPartId];
             var force = Vector3.zero;
 
-            // Check collision with all still parts
-            /*foreach (var stillPart in stillCollisionParts)
-            {
-                force += movingPart.CheckAndResolveCollision(stillPart);
-            }*/
-
             var lockObj = new object();
             Parallel.ForEach(stillCollisionParts, (stillPart) =>
             {
@@ -164,6 +158,16 @@ namespace PhysicsDisassembly.Simulation
             if (_parts.TryGetValue(partId, out Part part))
             {
                 return part.GetVertices(worldSpace);
+            }
+
+            throw new KeyNotFoundException($"Part with ID {partId} not found.");
+        }
+        
+        public Vector3[] GetContactPoints(string partId)
+        {
+            if (_parts.TryGetValue(partId, out Part part))
+            {
+                return part.GetContactPoints();
             }
 
             throw new KeyNotFoundException($"Part with ID {partId} not found.");

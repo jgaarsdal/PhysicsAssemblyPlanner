@@ -16,6 +16,7 @@ namespace PhysicsDisassembly.SDF
     {
         public Transform ObjectTransform => _objectTransform;
         public Vector3[] WorldVertices => _vertices;
+        public Vector3[] ContactPoints => _contactPoints;
         public Vector3Int[] Triangles => _triangles;
         public float[,,] Distances => _distances;
         public int GridSize => _gridSize;
@@ -24,6 +25,7 @@ namespace PhysicsDisassembly.SDF
         
         private MeshFilter[] _objectMeshes;
         private Vector3[] _vertices;
+        private Vector3[] _contactPoints;
         private float[,,] _distances;
         private int[,,] _closestTriangles;
         private Vector3 _origin;
@@ -48,6 +50,8 @@ namespace PhysicsDisassembly.SDF
         
         public SignedDistanceField(GameObject gameObj, float defaultCellSize = 0.05f, float boundingBoxPadding = 0.1f, float collisionPenetrationThreshold = 0.01f, bool useGPU = true)
         {
+            _objectTransform = gameObj.transform;
+            _objectMeshes = _objectTransform.GetComponentsInChildren<MeshFilter>();
             _defaultCellSize = defaultCellSize;
             _boundingBoxPadding = boundingBoxPadding;
             _collisionPenetrationThreshold = collisionPenetrationThreshold;
@@ -56,26 +60,8 @@ namespace PhysicsDisassembly.SDF
             // TODO: Try with cell size that is different for x,y,z 
             // TODO: Same for grid size
             
-            var bounds = CalculateBoundsForAllRenderers(gameObj);
-            if (bounds.size == Vector3.zero)
-            {
-                _cellSize = _defaultCellSize;
-            }
-            else
-            {
-                var cellSizes = GetSDFCellSize(bounds);
-                _cellSize = Mathf.Min(cellSizes.x, cellSizes.y, cellSizes.z);
-            }
-            
-            bounds.Expand(boundingBoxPadding);
-            bounds = CalculateGrid(bounds);
-            
-            _objectMeshes = gameObj.GetComponentsInChildren<MeshFilter>();
-            _objectTransform = gameObj.transform;
-            _origin = bounds.min;
-
-            _vertices = GetAllVertices();
             _triangles = GetAllTriangles();
+            UpdateVertices();
             
             if (SupportsComputeShaders())
             {
@@ -136,29 +122,40 @@ namespace PhysicsDisassembly.SDF
             
             bounds.Expand(_boundingBoxPadding);
             bounds = CalculateGrid(bounds);
-            
-            _objectMeshes = _objectTransform.GetComponentsInChildren<MeshFilter>();
             _origin = bounds.min;
 
             _vertices = GetAllVertices();
+            
+            // Get contact points for collision test
+            var tris = new int[Triangles.Length * 3];
+
+            for (var i = 0; i < Triangles.Length; i++)
+            {
+                tris[i * 3] = Triangles[i].x;
+                tris[i * 3 + 1] = Triangles[i].y;
+                tris[i * 3 + 2] = Triangles[i].z;
+            }
+            
+            _contactPoints = PointCloudSampler.GetPointCloud(_vertices, tris, 1024,
+                PointCloudSampler.SampleMethod.WeightedBarycentricCoordinates, false);
         }
         
         public bool CheckCollision(SignedDistanceField otherSDF)
         {
-            return CheckCollision(otherSDF, _vertices);
+            return CheckCollision(otherSDF, _contactPoints);
         }
         
-        public bool CheckCollision(SignedDistanceField otherSDF, Vector3[] worldVertices)
+        public bool CheckCollision(SignedDistanceField otherSDF, Vector3[] contactPoints)
         {
             var collisionFound = false;
             var lockObj = new object();
 
-            // Check all vertices of this object against the other object's SDF
-            Parallel.ForEach(worldVertices, 
-                (vertex, state) =>
+            // Check all contact points of this object against the other object's SDF
+            Parallel.ForEach(contactPoints, 
+                (contactPoint, state) =>
                 {
                     // Convert to grid coordinates
-                    var gridPos = otherSDF.WorldToGridPosition(vertex);
+                    var gridPos = otherSDF.WorldToGridPosition(contactPoint);
 
                     // Check if the point is inside the other object's grid
                     if (gridPos.x >= 0 && gridPos.x < otherSDF.GridSize &&

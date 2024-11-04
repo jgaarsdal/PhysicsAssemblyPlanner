@@ -59,7 +59,10 @@ namespace PhysicsDisassembly
                 {
                     if (verbose)
                     {
-                        Debug.Log($"Testing action '{action}' on part '{_moveId}'");
+                        var actionStr = _useRotation
+                            ? $"{action[0]},{action[1]},{action[2]},{action[3]},{action[4]},{action[5]}"
+                            : $"{action[0]},{action[1]},{action[2]}";
+                        Debug.Log($"Testing action '{actionStr}' on part '{_moveId}' with still ids '{string.Join(',', _stillIds)}'");
                     }
                     
                     var newState = state;
@@ -78,10 +81,10 @@ namespace PhysicsDisassembly
                         {
                             _simulation.Forward(1);
                             _simulation.CheckCollisions(_moveId);
-
+                            
                             newState = GetState();
                             tempPath.AddState(newState);
-
+                            
                             var durationSecs = Time.realtimeSinceStartup - startTime;
                             if (durationSecs > timeoutSecs)
                             {
@@ -145,14 +148,15 @@ namespace PhysicsDisassembly
             _simulation.SetAngularVelocity(_moveId, state.AngularVelocity);
         }
 
-        private void ApplyAction(Vector3 action)
+        private void ApplyAction(float[] action)
         {
-            Debug.Log("force sim: " + _physicsConfiguration.SimulationForce);
-            var force = action.normalized * _physicsConfiguration.SimulationForce;
-            Debug.Log("force: " + force);
+            var transAction = new Vector3(action[0], action[1], action[2]);
+            var force = transAction.normalized * _physicsConfiguration.SimulationForce;
+            
             if (_useRotation)
             {
-                var torque = new Vector3(force.x * 3, force.y * 3, force.z);
+                var rotAction = new Vector3(action[3], action[4], action[5]);
+                var torque = rotAction.normalized * _physicsConfiguration.SimulationTorque;
                 _simulation.ApplyForceAndTorque(_moveId, force, torque);
             }
             else
@@ -167,32 +171,38 @@ namespace PhysicsDisassembly
             return !moveBounds.Intersects(_stillBounds);
         }
 
-        private Vector3[] GetActions()
+        private float[][] GetActions()
         {
-            Vector3[] actions;
+            float[][] actions;
             if (_useRotation)
             {
-                actions = new Vector3[]
+                actions = new float[][]
                 {
-                    new Vector3(0, 0, 0),
-                    new Vector3(-1, 0, 0),
-                    new Vector3(1, 0, 0),
-                    new Vector3(0, 0, 1),
-                    new Vector3(0, 0, -1),
-                    new Vector3(0, 1, 0),
-                    new Vector3(0, -1, 0)
+                    new [] { 0f, 0f, 0f, 0f, 0f, 1f },
+                    new [] { 0f, 0f, 0f, 0f, 0f, -1f },
+                    new [] { 0f, 0f, 0f, 0f, 1f, 0f },
+                    new [] { 0f, 0f, 0f, 0f, -1f, 0f },
+                    new [] { 0f, 0f, 0f, 1f, 0f, 0f },
+                    new [] { 0f, 0f, 0f, -1f, 0f, 0f },
+                    
+                    new [] { 0f, 0f, 1f, 0f, 0f, 0f },
+                    new [] { 0f, 0f, -1f, 0f, 0f, 0f },
+                    new [] { 0f, 1f, 0f, 0f, 0f, 0f },
+                    new [] { 0f, -1f, 0f, 0f, 0f, 0f },
+                    new [] { 1f, 0f, 0f, 0f, 0f, 0f },
+                    new [] { -1f, 0f, 0f, 0f, 0f, 0f }
                 };
             }
             else
             {
-                actions = new Vector3[]
+                actions = new float[][]
                 {
-                    new Vector3(0, 0, 1),
-                    new Vector3(0, 0, -1),
-                    new Vector3(0, 1, 0),
-                    new Vector3(0, -1, 0),
-                    new Vector3(1, 0, 0),
-                    new Vector3(-1, 0, 0)
+                    new [] { 0f, 0f, 1f },
+                    new [] { 0f, 0f, -1f },
+                    new [] { 0f, 1f, 0f },
+                    new [] { 0f, -1f, 0f },
+                    new [] { 1f, 0f, 0f },
+                    new [] { -1f, 0f, 0f }
                 };
             }
 

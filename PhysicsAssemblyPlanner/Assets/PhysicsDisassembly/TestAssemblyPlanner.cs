@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using DG.Tweening;
 using UnityEngine;
 
@@ -23,10 +22,14 @@ namespace PhysicsDisassembly
         
         [Header("Physics Simulation Settings")]
         [SerializeField] private float _simulationForce = 5f;
+        [SerializeField] private float _simulationTorque = 1f;
         [SerializeField] private float _simulationTimeStep = 0.0005f; 
         [SerializeField] private int _simulationFrameSkip = 90;
         [SerializeField] private float _simulationContactStiffness = 15f;
         [SerializeField] private float _simulationContactDamping = 0f;
+        [SerializeField] private float _simulationMaxVelocity = 0.01f;
+        [SerializeField] private float _simulationMaxAngularVelocity = 0.01f;
+        [SerializeField] private int _simulationContactPointCount = 1024;
         
         [Header("SDF Collision Settings")]
         [SerializeField] private float _sdfDefaultCellSize = 0.05f;
@@ -47,24 +50,28 @@ namespace PhysicsDisassembly
                 BFSPlannerConfiguration = new BFSPlannerConfiguration()
                 {
                     BFSStatePositionThreshold = _bfsStatePositionThreshold,
-                    BFSStateAngleThreshold = _bfsStateAngleThreshold,
+                    BFSStateAngleThreshold = _bfsStateAngleThreshold
                 },
                 AssemblyTimeoutSecs = _assemblyTimeoutSecs,
                 PartTimeoutSecs = _partTimeoutSecs,
                 PhysicsSimulationConfiguration = new PhysicsSimulationConfiguration()
                 {
                     SimulationForce = _simulationForce,
+                    SimulationTorque = _simulationTorque,
                     SimulationTimeStep = _simulationTimeStep,
                     SimulationFrameSkip = _simulationFrameSkip,
                     SimulationContactStiffness = _simulationContactStiffness,
                     SimulationContactDamping = _simulationContactDamping,
+                    SimulationMaxVelocity = _simulationMaxVelocity,
+                    SimulationMaxAngularVelocity = _simulationMaxAngularVelocity,
+                    SimulationContactPointCount = _simulationContactPointCount
                 },
                 SDFCollisionConfiguration = new SDFCollisionConfiguration()
                 {
                     SDFDefaultCellSize = _sdfDefaultCellSize,
                     SDFBoxPadding = _sdfBoxPadding,
                     SDFCollisionPenetrationThreshold = _sdfCollisionPenetrationThreshold,
-                    SDFUseGPU = _useGPU,
+                    SDFUseGPU = _useGPU
                 },
                 Verbose = _verbose
             };
@@ -85,10 +92,10 @@ namespace PhysicsDisassembly
             for (var i = 0; i < _disassemblySequence.Count; i++)
             {
                 _disassemblyTweens[i] = _disassemblySequence[i].PartObject.transform
-                    .DOPath(_disassemblySequence[i].Positions.ToArray(), 5f)
+                    .DOPath(_disassemblySequence[i].Positions.ToArray(), 2f)
                     .SetEase(Ease.InOutCubic)
                     .SetLoops(-1, LoopType.Yoyo)
-                    .SetDelay(i > 0 ? 5f : 0f);
+                    .SetDelay(i * 4f);
             }
         }
         

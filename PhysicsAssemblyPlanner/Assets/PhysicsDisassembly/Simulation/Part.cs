@@ -19,19 +19,35 @@ namespace PhysicsDisassembly.Simulation
         private Vector3 _initialScale;
         private Vector3[] _localVertices;
         private Vector3[] _worldVertices;
-
+        private Vector3[] _localContactPoints;
+        private Vector3[] _worldContactPoints;
+        private int[] _triangles;
         private Vector3 _centerOffset; // Offset from local origin to geometric center
+        
+        private readonly float _maxVelocity = 0.01f;
+        private readonly float _maxAngularVelocity = 0.01f;
+        private readonly int _contactPointCount = 1024;
 
-        public Part(Mesh mesh)
-            : this(mesh, Vector3.zero, Quaternion.identity, Vector3.one)
+        public Part(Mesh mesh, PhysicsSimulationConfiguration configuration)
+            : this(mesh, Vector3.zero, Quaternion.identity, Vector3.one, configuration)
         {
         }
 
-        public Part(Mesh mesh, Vector3 initialTransformPosition, Quaternion initialRotation, Vector3 initialScale)
+        public Part(Mesh mesh, Vector3 initialTransformPosition, Quaternion initialRotation, Vector3 initialScale, PhysicsSimulationConfiguration configuration)
         {
+            _maxVelocity = configuration.SimulationMaxVelocity;
+            _maxAngularVelocity = configuration.SimulationMaxAngularVelocity;
+            _contactPointCount = configuration.SimulationContactPointCount;
+            
+            _triangles = mesh.triangles;
             _localVertices = mesh.vertices;
             _worldVertices = new Vector3[_localVertices.Length];
+            _worldContactPoints = new Vector3[_contactPointCount];
 
+            // Get contact points
+            _localContactPoints = PointCloudSampler.GetPointCloud(_localVertices, _triangles, _contactPointCount,
+                PointCloudSampler.SampleMethod.WeightedBarycentricCoordinates, false);
+            
             // Calculate the geometric center in local space
             var sum = Vector3.zero;
             foreach (var vertex in _localVertices)
@@ -99,35 +115,39 @@ namespace PhysicsDisassembly.Simulation
                 _worldVertices[i] = transformMatrix.MultiplyPoint3x4(_localVertices[i]);
                 tempBounds.Encapsulate(_worldVertices[i]);
             }
+
+            _worldContactPoints[0] = transformMatrix.MultiplyPoint3x4(_localContactPoints[0]);
+            var contactBounds = new Bounds(_worldContactPoints[0], Vector3.zero);
+            for (var i = 1; i < _contactPointCount; i++)
+            {
+                _worldContactPoints[i] = transformMatrix.MultiplyPoint3x4(_localContactPoints[i]);
+                contactBounds.Encapsulate(_worldContactPoints[i]);
+            }
             
             Bounds = tempBounds;
         }
-
+        
         public void Step(float timeStep)
         {
             // Calculate new velocities using timestep
             Velocity += Force * timeStep;
             AngularVelocity += Torque * timeStep;
 
-            // TODO Tweak settings
-            
             // Apply damping
             //Velocity = ApplyDamping(Velocity, 0.99f);
             //AngularVelocity = ApplyDamping(AngularVelocity, 0.98f);
             
             // Clamp linear velocity while preserving direction
-            Debug.Log("Velocity.magnitude 1: " + Velocity.magnitude);
-            if (Velocity.magnitude > 0.01f)
+            if (Velocity.magnitude > _maxVelocity)
             {
-                Velocity = Velocity.normalized * 0.01f;
+                Velocity = Velocity.normalized * _maxVelocity;
             }
-            Debug.Log("Velocity.magnitude 2: " + Velocity.magnitude);
 
             // Clamp angular velocity while preserving axis of rotation
-            //if (AngularVelocity.magnitude > 5f)
-            //{
-            //    AngularVelocity = AngularVelocity.normalized * 5f;
-            //}
+            if (AngularVelocity.magnitude > _maxAngularVelocity)
+            {
+                AngularVelocity = AngularVelocity.normalized * _maxAngularVelocity;
+            }
             
             // Update positions using new velocities
             Position += Velocity;
@@ -140,6 +160,13 @@ namespace PhysicsDisassembly.Simulation
             // Update world vertices and bounds
             Update();
         }
+        
+        /*
+         private Vector3 ApplyDamping(Vector3 velocity, float dampingFactor = 0.98f)
+        {
+            return velocity * dampingFactor;
+        }
+        */
 
         public void Reset()
         {
@@ -158,10 +185,10 @@ namespace PhysicsDisassembly.Simulation
         {
             return worldSpace ? _worldVertices : _localVertices;
         }
-        
-        private Vector3 ApplyDamping(Vector3 velocity, float dampingFactor = 0.98f)
+
+        public Vector3[] GetContactPoints(bool worldSpace = true)
         {
-            return velocity * dampingFactor;
+            return worldSpace ? _worldContactPoints : _localContactPoints;
         }
     }
 }

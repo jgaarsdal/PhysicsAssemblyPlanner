@@ -16,6 +16,11 @@ namespace PhysicsDisassembly
         private readonly string[] _successStatus = { "Success", "Already disassembled" };
         private readonly string[] _failureStatus = { "Timeout", "Failure" };
 
+        private Dictionary<string, int> _attemptsPerPart = new Dictionary<string, int>();
+        private Dictionary<string, HashSet<string>> _blockedByRelations = new Dictionary<string, HashSet<string>>();
+        
+        private const int _maxAttemptsPerPart = 10;
+        
         public ProgressiveQueueSequencePlanner(GameObject assemblyRoot, AssemblyPlanningConfiguration configuration)
         {
             _configuration = configuration;
@@ -54,19 +59,57 @@ namespace PhysicsDisassembly
             var seqCount = 0;
             var totalDurationSecs = 0f;
 
+            _attemptsPerPart.Clear();
+            _blockedByRelations.Clear();
+            foreach (var partId in _partIds)
+            {
+                _attemptsPerPart[partId] = 0;
+                _blockedByRelations[partId] = new HashSet<string>();
+            }
+            
             var activeQueue = _partIds.Select(partId => (partId, 1)).ToList();
             Shuffle(activeQueue);
             var inactiveQueue = new List<(string id, int depth)>();
 
-            var allIds = new List<string>(_partIds);
+            var allIds = new HashSet<string>(_partIds);
             
             while (true)
             {
+                if (activeQueue.Count == 0)
+                {
+                    activeQueue = new List<(string id, int depth)>(inactiveQueue);
+                    inactiveQueue.Clear();
+
+                    if (activeQueue.Count == 0)
+                    {
+                        break;
+                    }
+                    
+                    // Sort active queue by most promising parts
+                    activeQueue.Sort((a, b) => CompareParts(a.partId, b.partId, allIds));
+                }
+                
                 var (moveId, maxDepth) = activeQueue[0];
                 activeQueue.RemoveAt(0);
                 
+                // Check if we should try this part before doing any planning
+                if (!ShouldTryPart(moveId))
+                {
+                    if (_configuration.Verbose)
+                    {
+                        Debug.Log($"Skipping part {moveId} due to too many attempts");
+                    }
+                    continue;  // Skip to next part in queue
+                }
+                
                 var stillIds = allIds.Where(id => id != moveId).ToList();
 
+                if (_configuration.Verbose)
+                {
+                    Debug.Log($"Attempting to remove part {moveId} (attempt #{_attemptsPerPart[moveId]})");
+                    Debug.Log($"Still parts: {string.Join(", ", stillIds)}");
+                }
+                
                 var (status, durationSecs, path) = PlanPath(moveId, stillIds, false, maxDepth);
 
                 if (_failureStatus.Contains(status) && _configuration.DisassemblyUseRotation)
@@ -93,6 +136,12 @@ namespace PhysicsDisassembly
                 }
                 else
                 {
+                    // Record which parts are blocking this part
+                    foreach (var stillId in stillIds)
+                    {
+                        _blockedByRelations[moveId].Add(stillId);
+                    }
+                    
                     inactiveQueue.Add((moveId, maxDepth + 1));
                 }
 
@@ -106,12 +155,6 @@ namespace PhysicsDisassembly
                 {
                     seqStatus = "Success";
                     break;
-                }
-
-                if (activeQueue.Count == 0)
-                {
-                    activeQueue = new List<(string id, int depth)>(inactiveQueue);
-                    inactiveQueue.Clear();
                 }
 
                 if (totalDurationSecs > _configuration.AssemblyTimeoutSecs)
@@ -157,12 +200,58 @@ namespace PhysicsDisassembly
 
         private (string status, float tPlan, Path path) PlanPath(string moveId, List<string> stillIds, bool rotation, int maxDepth)
         {
-            var planner = new BFSPlanner(moveId, stillIds, rotation, _partObjects, _partSDFs, 
+            // Increment attempts when we actually try to plan a path
+            _attemptsPerPart[moveId]++;
+        
+            if (_configuration.Verbose)
+            {
+                Debug.Log($"Attempt #{_attemptsPerPart[moveId]} for part {moveId}");
+            }
+
+            var currentPartObjects = new Dictionary<string, GameObject>() { { moveId, _partObjects[moveId] } };
+            var currentPartSDFs = new Dictionary<string, SignedDistanceField>() { { moveId, _partSDFs[moveId] } };
+
+            foreach (var partId in stillIds)
+            {
+                currentPartObjects.Add(partId, _partObjects[partId]);
+                currentPartSDFs.Add(partId, _partSDFs[partId]);
+            }
+            
+            var planner = new BFSPlanner(moveId, stillIds, rotation, currentPartObjects, currentPartSDFs, 
                 _configuration.BFSPlannerConfiguration, _configuration.PhysicsSimulationConfiguration);
             
             var (status, tPlan, path) = planner.Plan(_configuration.PartTimeoutSecs, maxDepth, _configuration.Verbose);
 
             return (status, tPlan, path);
+        }
+
+        private int CompareParts(string partA, string partB, HashSet<string> remainingParts)
+        {
+            // Try parts with fewer attempts first
+            var attemptCompare = _attemptsPerPart[partA].CompareTo(_attemptsPerPart[partB]);
+            if (attemptCompare != 0)
+            {
+                return attemptCompare;
+            }
+            
+            // If attempts are equal, consider blocking relations
+            var aBlockedCount = _blockedByRelations[partA].Count(id => remainingParts.Contains(id));
+            var bBlockedCount = _blockedByRelations[partB].Count(id => remainingParts.Contains(id));
+            
+            return aBlockedCount.CompareTo(bBlockedCount);
+        }
+        
+        private bool ShouldTryPart(string partId)
+        {
+            if (_attemptsPerPart[partId] >= _maxAttemptsPerPart)
+            {
+                if (_configuration.Verbose)
+                {
+                    Debug.Log($"Skipping part {partId} - reached maximum attempts ({_maxAttemptsPerPart})");
+                }
+                return false;
+            }
+            return true;
         }
     }
 }

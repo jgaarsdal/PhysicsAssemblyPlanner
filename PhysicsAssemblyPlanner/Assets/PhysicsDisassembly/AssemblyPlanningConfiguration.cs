@@ -21,10 +21,14 @@ namespace PhysicsDisassembly
     public struct PhysicsSimulationConfiguration
     {
         public float SimulationForce { get; set; }
+        public float SimulationTorque { get; set; }
         public float SimulationTimeStep { get; set; }
         public int SimulationFrameSkip { get; set; }
         public float SimulationContactStiffness { get; set; }
         public float SimulationContactDamping { get; set; }
+        public float SimulationMaxVelocity { get; set; }
+        public float SimulationMaxAngularVelocity { get; set; }
+        public int SimulationContactPointCount { get; set; }
     }
     
     public struct SDFCollisionConfiguration

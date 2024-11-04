@@ -41,26 +41,7 @@ namespace PhysicsDisassembly.SDF
             _sdfPartA.UpdateVertices();
             _sdfPartB.UpdateVertices();
             
-            var isColliding = _sdfPartA.CheckCollision(_sdfPartB);
-            if (isColliding)
-            {
-                var contactPoint = FindContactPoint();
-                var collisionNormal = CalculateCollisionNormal(contactPoint);
-
-                Debug.DrawLine(contactPoint, contactPoint + collisionNormal * 0.5f, Color.red, 60f);
-                Debug.Log("collisionNormal: " + collisionNormal);
-            }
-
-            Debug.Log($"SDFCollisionTester: IS COLLIDING = {isColliding}", this);
-        }
-
-        private Vector3 FindContactPoint()
-        {
-            var minDistance = float.MaxValue;
-            var bestPoint = Vector3.zero;
-            var bestSDF = 0f;
-
-            /*var verts = _sdfPartA.WorldVertices;
+            var verts = _sdfPartA.WorldVertices;
             var tris = new int[_sdfPartA.Triangles.Length * 3];
 
             for (var i = 0; i < _sdfPartA.Triangles.Length; i++)
@@ -71,8 +52,27 @@ namespace PhysicsDisassembly.SDF
             }
             
             var contactPoints = PointCloudSampler.GetPointCloud(verts, tris, 1024,
-                PointCloudSampler.SampleMethod.WeightedBarycentricCoordinates, false);*/
+                PointCloudSampler.SampleMethod.WeightedBarycentricCoordinates, false);
+            
+            var isColliding = _sdfPartA.CheckCollision(_sdfPartB, contactPoints);
+            if (isColliding)
+            {
+                var contactPoint = FindContactPoint(contactPoints);
+                var collisionNormal = CalculateCollisionNormal(contactPoint);
 
+                Debug.DrawLine(contactPoint, contactPoint + collisionNormal * 0.5f, Color.red, 60f);
+                Debug.Log("collisionNormal: " + collisionNormal);
+            }
+
+            Debug.Log($"SDFCollisionTester: IS COLLIDING = {isColliding}", this);
+        }
+
+        private Vector3 FindContactPoint(Vector3[] contactPoints)
+        {
+            var minDistance = float.MaxValue;
+            var bestPoint = Vector3.zero;
+            var bestSDF = 0f;
+            
             /*if (_visualize)
             {
                 var center = GetObjectCenter(_sdfPartA.WorldVertices);
@@ -83,7 +83,7 @@ namespace PhysicsDisassembly.SDF
             }*/
             
             // Sample vertices to find the point of deepest penetration
-            foreach (var vertex in _sdfPartA.WorldVertices)
+            foreach (var vertex in contactPoints)
             {
                 // Transform vertex to other object's local space
                 var gridPos = _sdfPartB.WorldToGridPosition(vertex);
