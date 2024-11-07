@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using PhysicsDisassembly.SDF;
 using PhysicsDisassembly.Simulation;
 using UnityEngine;
@@ -34,23 +35,41 @@ namespace PhysicsDisassembly
         public (string status, float totalDurationSecs, Path path) Plan(float timeoutSecs, int maxDepth, bool verbose = false)
         {
             _simulation.Reset();
-
+            
             var initState = GetState();
-            var path = GetPath(new List<State> { initState });
-
+            
             if (IsDisassembled())
             {
+                var path = GetPath(new List<State> { initState });
                 return ("Already disassembled", 0f, path);
             }
-
-            var status = "Failure";
-            var startTime = Time.realtimeSinceStartup;
-            var step = 0;
+            
             var actions = GetActions();
+            
+            if (_useRotation)
+            {
+                var (status, duration, finalPath) = PlanRotation(initState, actions, timeoutSecs, maxDepth, verbose);
+                return (status, duration, finalPath);
+            }
+            else
+            {
+                var (status, duration, finalPath) = PlanTranslation(initState, actions, timeoutSecs, maxDepth, verbose);
+                return (status, duration, finalPath);
+            }
+        }
 
+        private (string status, float totalDurationSecs , Path path) PlanTranslation(State initState, float[][] actions, float timeoutSecs, int maxDepth, bool verbose = false)
+        {
+            var status = "Failure";
+            
             var stateQueue = new Queue<(State, Path)>();
             stateQueue.Enqueue((initState, new Path(_moveId, _partObjects[_moveId])));
 
+            var path = GetPath(new List<State> { initState });
+            
+            var startTime = Time.realtimeSinceStartup;
+            var step = 0;
+            
             while (stateQueue.Count > 0 && step < maxDepth)
             {
                 var (state, currentPath) = stateQueue.Dequeue();
@@ -59,9 +78,7 @@ namespace PhysicsDisassembly
                 {
                     if (verbose)
                     {
-                        var actionStr = _useRotation
-                            ? $"{action[0]},{action[1]},{action[2]},{action[3]},{action[4]},{action[5]}"
-                            : $"{action[0]},{action[1]},{action[2]}";
+                        var actionStr = $"{action[0]},{action[1]},{action[2]}";
                         Debug.Log($"Testing action '{actionStr}' on part '{_moveId}' with still ids '{string.Join(',', _stillIds)}'");
                     }
                     
@@ -77,6 +94,12 @@ namespace PhysicsDisassembly
                     {
                         SetState(GetState());
 
+                        if (verbose)
+                        {
+                            var s = GetState();
+                            Debug.Log($"State BEFORE: pivotPos={s.PivotPosition}, vel={s.Velocity}");
+                        }
+                        
                         for (var i = 0; i < _physicsConfiguration.SimulationFrameSkip; i++)
                         {
                             _simulation.Forward(1);
@@ -91,6 +114,12 @@ namespace PhysicsDisassembly
                                 status = "Timeout";
                                 break;
                             }
+                        }
+                        
+                        if (verbose)
+                        {
+                            var s = GetState();
+                            Debug.Log($"State AFTER: pivotPos={s.PivotPosition}, vel={s.Velocity}");
                         }
 
                         if (IsDisassembled())
@@ -123,6 +152,125 @@ namespace PhysicsDisassembly
                 {
                     break;
                 }
+
+                step++;
+            }
+
+            return (status, Time.realtimeSinceStartup - startTime, path);
+        }
+        
+        private (string status, float totalDurationSecs , Path path) PlanRotation(State initState, float[][] actions, float timeoutSecs, int maxDepth, bool verbose = false)
+        {
+            var status = "Failure";
+            
+            var stateQueue = new Queue<(State, Path)>();
+            stateQueue.Enqueue((initState, new Path(_moveId, _partObjects[_moveId])));
+
+            var path = GetPath(new List<State> { initState });
+            
+            var startTime = Time.realtimeSinceStartup;
+            var step = 0;
+            
+            while (step < maxDepth)
+            {
+                var stepStateQueue = new Queue<(State, Path)>();
+                
+                while (stateQueue.Count > 0)
+                {
+                    var (state, currentPath) = stateQueue.Dequeue();
+
+                    foreach (var action in actions)
+                    {
+                        if (verbose)
+                        {
+                            var actionStr = $"{action[0]},{action[1]},{action[2]},{action[3]},{action[4]},{action[5]}";
+                            Debug.Log($"Testing action '{actionStr}' on part '{_moveId}' with still ids '{string.Join(',', _stillIds)}'");
+                        }
+                        
+                        var newState = state;
+                        var tempPath = currentPath;
+
+                        _simulation.Reset();
+
+                        SetState(state);
+                        ApplyAction(action);
+                        
+                        while (true)
+                        {
+                            SetState(GetState());
+
+                            if (verbose)
+                            {
+                                var s = GetState();
+                                Debug.Log($"State BEFORE: pivotPos={s.PivotPosition}, rot={s.Rotation}, vel={s.Velocity}, angVel={s.AngularVelocity}");
+                            }
+                            
+                            for (var i = 0; i < _physicsConfiguration.SimulationFrameSkip; i++)
+                            {
+                                _simulation.Forward(1);
+                                _simulation.CheckCollisions(_moveId);
+                                
+                                newState = GetState();
+                                tempPath.AddState(newState);
+                                
+                                var durationSecs = Time.realtimeSinceStartup - startTime;
+                                if (durationSecs > timeoutSecs)
+                                {
+                                    status = "Timeout";
+                                    break;
+                                }
+                            }
+                            
+                            if (verbose)
+                            {
+                                var s = GetState();
+
+                                //var t = GameObject.Instantiate(_partObjects[_moveId], s.PivotPosition, s.Rotation);
+                                
+                                Debug.Log($"State AFTER: pivotPos={s.PivotPosition}, rot={s.Rotation}, vel={s.Velocity}, angVel={s.AngularVelocity}");
+                            }
+
+                            if (IsDisassembled())
+                            {
+                                status = "Success";
+                                path = tempPath;
+                                break;
+                            }
+
+                            if (status == "Timeout")
+                            {
+                                break;
+                            }
+
+                            if (AnyStateSimilar(tempPath, newState, _physicsConfiguration.SimulationFrameSkip))
+                            {
+                                break;
+                            }
+                        }
+
+                        if (status == "Success" || status == "Timeout")
+                        {
+                            break;
+                        }
+                        
+                        stepStateQueue.Enqueue((newState, tempPath));
+                    }
+                    
+                    if (status == "Success" || status == "Timeout")
+                    {
+                        break;
+                    }
+                }
+                
+                if (status == "Success" || status == "Timeout")
+                {
+                    break;
+                }
+                
+                var sortedStates = stepStateQueue
+                    .OrderByDescending(x => x.Item2.Positions.Count)
+                    .ToList();
+                stateQueue = new Queue<(State, Path)>(sortedStates);
 
                 step++;
             }

@@ -138,19 +138,28 @@ namespace PhysicsDisassembly.Simulation
 
             var movingPart = _collisionParts[movingPartId];
             var force = Vector3.zero;
+            var torque = Vector3.zero;
 
             var lockObj = new object();
             Parallel.ForEach(stillCollisionParts, (stillPart) =>
             {
-                var tempForce = movingPart.CheckAndResolveCollision(stillPart);
+                var (tempForce, tempTorque) = movingPart.CheckAndResolveCollision(stillPart, _useRotation);
 
                 lock (lockObj)
                 {
                     force += tempForce;
+                    torque += tempTorque;
                 }
             });
-            
-            ApplyForce(movingPartId, force);
+
+            if (_useRotation)
+            {
+                ApplyForceAndTorque(movingPartId, force, torque);
+            }
+            else
+            {
+                ApplyForce(movingPartId, force);
+            }
         }
 
         public Vector3[] GetVertices(string partId, bool worldSpace = true)

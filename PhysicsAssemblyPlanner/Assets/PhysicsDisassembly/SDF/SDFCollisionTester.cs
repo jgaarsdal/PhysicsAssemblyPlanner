@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using PhysicsDisassembly.Simulation;
 using UnityEngine;
 
 namespace PhysicsDisassembly.SDF
@@ -9,7 +10,8 @@ namespace PhysicsDisassembly.SDF
         [SerializeField] private GameObject _partB = default;
         [Space] [SerializeField] private float _sdfDefaultCellSize = 0.05f;
         [SerializeField] private float _sdfBoxPadding = 0.1f;
-        [SerializeField] private float _sdfCollisionPenetrationThreshold = 0.01f;
+        [SerializeField] private float _collisionPenetrationThreshold = 0f;
+        [SerializeField] private int _collisionContactPointCount = 1024;
         [SerializeField] private bool _useGPU = true;
         [SerializeField] private bool _visualize = true;
 
@@ -30,17 +32,51 @@ namespace PhysicsDisassembly.SDF
 
         private async void ComputeSDF()
         {
-            _sdfPartA = new SignedDistanceField(_partA, _sdfDefaultCellSize, _sdfBoxPadding, _sdfCollisionPenetrationThreshold, _useGPU);
-            _sdfPartB = new SignedDistanceField(_partB, _sdfDefaultCellSize, _sdfBoxPadding, _sdfCollisionPenetrationThreshold, _useGPU);
+            _sdfPartA = new SignedDistanceField(_partA, _sdfDefaultCellSize, _sdfBoxPadding, _useGPU);
+            _sdfPartB = new SignedDistanceField(_partB, _sdfDefaultCellSize, _sdfBoxPadding, _useGPU);
 
             await Task.WhenAll(_sdfPartA.ComputeSDF(), _sdfPartB.ComputeSDF());
         }
 
         private void TestCollision()
         {
+            var isColliding = false;
+            
             _sdfPartA.UpdateVertices();
             _sdfPartB.UpdateVertices();
+
+            var physicsSimulationConfiguration = new PhysicsSimulationConfiguration()
+            {
+                SimulationContactPointCount = _collisionContactPointCount,
+                SimulationCollisionThreshold = _collisionPenetrationThreshold
+            };
+
+            var partA = new Part(_partA.GetComponentInChildren<MeshFilter>().sharedMesh, _partA.transform.position,
+                _partA.transform.rotation, _partA.transform.localScale, physicsSimulationConfiguration);
             
+            var contactPoints = partA.GetContactPoints();
+            
+            foreach (var contactPoint in contactPoints)
+            {
+                // Transform vertex to other object's local space and get grid position
+                var gridPos = _sdfPartB.WorldToGridPosition(contactPoint);
+
+                // Get penetration distance (equation from paper: d = min(g(x), 0))
+                var distance = _sdfPartB.GetDistance(gridPos);
+                var penetrationDistance = Mathf.Min(distance, 0f);
+                
+                if (penetrationDistance < _collisionPenetrationThreshold)
+                {
+                    isColliding = true;
+                    
+                    var collisionNormal = CalculateCollisionNormal(contactPoint);
+
+                    Debug.DrawLine(contactPoint, contactPoint + collisionNormal * 0.5f, Color.red, 60f);
+                    Debug.Log("collisionNormal: " + collisionNormal);
+                }
+            }
+            
+            /*
             var verts = _sdfPartA.WorldVertices;
             var tris = new int[_sdfPartA.Triangles.Length * 3];
 
@@ -51,9 +87,9 @@ namespace PhysicsDisassembly.SDF
                 tris[i * 3 + 2] = _sdfPartA.Triangles[i].z;
             }
             
-            var contactPoints = PointCloudSampler.GetPointCloud(verts, tris, 1024,
+            var contactPoints = PointCloudSampler.GetPointCloud(verts, tris, _collisionContactPointCount,
                 PointCloudSampler.SampleMethod.WeightedBarycentricCoordinates, false);
-            
+        
             var isColliding = _sdfPartA.CheckCollision(_sdfPartB, contactPoints);
             if (isColliding)
             {
@@ -62,25 +98,26 @@ namespace PhysicsDisassembly.SDF
 
                 Debug.DrawLine(contactPoint, contactPoint + collisionNormal * 0.5f, Color.red, 60f);
                 Debug.Log("collisionNormal: " + collisionNormal);
-            }
+            }*/
 
             Debug.Log($"SDFCollisionTester: IS COLLIDING = {isColliding}", this);
         }
 
+        /*
         private Vector3 FindContactPoint(Vector3[] contactPoints)
         {
             var minDistance = float.MaxValue;
             var bestPoint = Vector3.zero;
             var bestSDF = 0f;
             
-            /*if (_visualize)
-            {
-                var center = GetObjectCenter(_sdfPartA.WorldVertices);
-                foreach (var contactPoint in contactPoints)
-                {
-                    Debug.DrawLine(center, contactPoint, Color.blue, 60f);
-                }
-            }*/
+            //if (_visualize)
+            //{
+            //    var center = GetObjectCenter(_sdfPartA.WorldVertices);
+            //    foreach (var contactPoint in contactPoints)
+            //    {
+            //        Debug.DrawLine(center, contactPoint, Color.blue, 60f);
+            //    }
+            //}
             
             // Sample vertices to find the point of deepest penetration
             foreach (var vertex in contactPoints)
@@ -121,6 +158,7 @@ namespace PhysicsDisassembly.SDF
 
             return sum / vertices.Length;
         }
+        */
 
         private Vector3 CalculateCollisionNormal(Vector3 samplePoint)
         {

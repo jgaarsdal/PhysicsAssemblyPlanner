@@ -29,13 +29,14 @@ namespace PhysicsDisassembly
         public float SimulationMaxVelocity { get; set; }
         public float SimulationMaxAngularVelocity { get; set; }
         public int SimulationContactPointCount { get; set; }
+        public float SimulationCollisionThreshold { get; set; }
     }
     
     public struct SDFCollisionConfiguration
     {
         public float SDFDefaultCellSize { get; set; }
         public float SDFBoxPadding { get; set; }
-        public float SDFCollisionPenetrationThreshold { get; set; }
+        //public float SDFCollisionPenetrationThreshold { get; set; }
         public bool SDFUseGPU { get; set; }
     }
 }

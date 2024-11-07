@@ -168,7 +168,7 @@ namespace PhysicsDisassembly
             {
                 Debug.Log(
                     $"Result: {seqStatus} | Disassembled: {sequence.Count}/{_partIds.Count - 1} | Total # trials: {seqCount} | Total planning time: {totalDurationSecs}");
-                Debug.Log($"Sequence: {string.Join(", ", sequence)}");
+                Debug.Log($"Sequence: {string.Join(", ", sequence.Select(p => p.PartID))}");
             }
 
             return (seqStatus, sequence, seqCount, totalDurationSecs);

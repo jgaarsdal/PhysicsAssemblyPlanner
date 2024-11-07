@@ -16,7 +16,7 @@ namespace PhysicsDisassembly.SDF
     {
         public Transform ObjectTransform => _objectTransform;
         public Vector3[] WorldVertices => _vertices;
-        public Vector3[] ContactPoints => _contactPoints;
+        //public Vector3[] ContactPoints => _contactPoints;
         public Vector3Int[] Triangles => _triangles;
         public float[,,] Distances => _distances;
         public int GridSize => _gridSize;
@@ -35,7 +35,8 @@ namespace PhysicsDisassembly.SDF
         private readonly Vector3Int[] _triangles;
         private readonly float _boundingBoxPadding;
         private readonly float _defaultCellSize;
-        private readonly float _collisionPenetrationThreshold;
+        //private readonly float _collisionPenetrationThreshold;
+        //private readonly int _collisionContactPointCount;
         private readonly bool _useGPU;
         
         // GPU variables
@@ -45,16 +46,17 @@ namespace PhysicsDisassembly.SDF
         private readonly ComputeShader _computeShader;
 
         public SignedDistanceField(GameObject gameObj, SDFCollisionConfiguration configuration)
-        : this(gameObj, configuration.SDFDefaultCellSize, configuration.SDFBoxPadding, configuration.SDFCollisionPenetrationThreshold, configuration.SDFUseGPU)
+        : this(gameObj, configuration.SDFDefaultCellSize, configuration.SDFBoxPadding, /*configuration.SDFCollisionPenetrationThreshold,*/ configuration.SDFUseGPU)
         { }
         
-        public SignedDistanceField(GameObject gameObj, float defaultCellSize = 0.05f, float boundingBoxPadding = 0.1f, float collisionPenetrationThreshold = 0.01f, bool useGPU = true)
+        public SignedDistanceField(GameObject gameObj, float defaultCellSize = 0.05f, float boundingBoxPadding = 0.1f, /*float collisionPenetrationThreshold = 0.01f,*/ bool useGPU = true)
         {
             _objectTransform = gameObj.transform;
             _objectMeshes = _objectTransform.GetComponentsInChildren<MeshFilter>();
             _defaultCellSize = defaultCellSize;
             _boundingBoxPadding = boundingBoxPadding;
-            _collisionPenetrationThreshold = collisionPenetrationThreshold;
+            //_collisionPenetrationThreshold = collisionPenetrationThreshold;
+            //_collisionContactPointCount = collisionContactPointCount;
             _useGPU = useGPU;
             
             // TODO: Try with cell size that is different for x,y,z 
@@ -126,6 +128,7 @@ namespace PhysicsDisassembly.SDF
 
             _vertices = GetAllVertices();
             
+            /*
             // Get contact points for collision test
             var tris = new int[Triangles.Length * 3];
 
@@ -138,9 +141,10 @@ namespace PhysicsDisassembly.SDF
             
             _contactPoints = PointCloudSampler.GetPointCloud(_vertices, tris, 1024,
                 PointCloudSampler.SampleMethod.WeightedBarycentricCoordinates, false);
+                */
         }
         
-        public bool CheckCollision(SignedDistanceField otherSDF)
+        /*public bool CheckCollision(SignedDistanceField otherSDF)
         {
             return CheckCollision(otherSDF, _contactPoints);
         }
@@ -179,6 +183,7 @@ namespace PhysicsDisassembly.SDF
 
             return collisionFound;
         }
+        */
         
         private Vector3 GetSDFCellSize(Bounds bounds)
         {

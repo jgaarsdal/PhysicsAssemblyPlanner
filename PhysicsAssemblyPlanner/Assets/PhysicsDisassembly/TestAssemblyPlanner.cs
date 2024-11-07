@@ -30,17 +30,22 @@ namespace PhysicsDisassembly
         [SerializeField] private float _simulationMaxVelocity = 0.01f;
         [SerializeField] private float _simulationMaxAngularVelocity = 0.01f;
         [SerializeField] private int _simulationContactPointCount = 1024;
+        [SerializeField] private float _simulationCollisionThreshold = 0f;
         
         [Header("SDF Collision Settings")]
         [SerializeField] private float _sdfDefaultCellSize = 0.05f;
         [SerializeField] private float _sdfBoxPadding = 0.1f;
-        [SerializeField] private float _sdfCollisionPenetrationThreshold = 0.01f;
         [SerializeField] private bool _useGPU = true;
         
         private ProgressiveQueueSequencePlanner _assemblyPlanner;
-        private Tween[] _disassemblyTweens;
+        private Sequence _disassemblyTweenSequence;
         private List<Path> _disassemblySequence;
-    
+
+        private void Start()
+        {
+            DOTween.Init();
+        }
+
         [ContextMenu("Run Planner")]
         public async void RunAssemblyPlannerButton()
         {
@@ -64,13 +69,13 @@ namespace PhysicsDisassembly
                     SimulationContactDamping = _simulationContactDamping,
                     SimulationMaxVelocity = _simulationMaxVelocity,
                     SimulationMaxAngularVelocity = _simulationMaxAngularVelocity,
-                    SimulationContactPointCount = _simulationContactPointCount
+                    SimulationContactPointCount = _simulationContactPointCount,
+                    SimulationCollisionThreshold = _simulationCollisionThreshold
                 },
                 SDFCollisionConfiguration = new SDFCollisionConfiguration()
                 {
                     SDFDefaultCellSize = _sdfDefaultCellSize,
                     SDFBoxPadding = _sdfBoxPadding,
-                    SDFCollisionPenetrationThreshold = _sdfCollisionPenetrationThreshold,
                     SDFUseGPU = _useGPU
                 },
                 Verbose = _verbose
@@ -88,15 +93,29 @@ namespace PhysicsDisassembly
             
             ClearTweens();
             
-            _disassemblyTweens = new Tween[_disassemblySequence.Count];
+            _disassemblyTweenSequence = DOTween.Sequence();
+            
             for (var i = 0; i < _disassemblySequence.Count; i++)
             {
-                _disassemblyTweens[i] = _disassemblySequence[i].PartObject.transform
-                    .DOPath(_disassemblySequence[i].Positions.ToArray(), 2f)
-                    .SetEase(Ease.InOutCubic)
-                    .SetLoops(-1, LoopType.Yoyo)
-                    .SetDelay(i * 4f);
+                var sequenceTransform = _disassemblySequence[i].PartObject.transform;
+                var positions = _disassemblySequence[i].Positions;
+                var rotations = _disassemblySequence[i].Orientations;
+                
+                Debug.Log($"Sequence #{i} has {positions.Count} positions/rotations");
+
+                var stepInterval = positions.Count / 100;
+                for (var j = 0; j < positions.Count; j += stepInterval)
+                {
+                    // Add position and rotation tweens to run in parallel
+                    _disassemblyTweenSequence.Append(
+                        sequenceTransform.DOMove(positions[j], 0.059f)
+                            .SetEase(Ease.InOutCubic))
+                        .Join(sequenceTransform.DORotateQuaternion(rotations[j], 0.059f)
+                            .SetEase(Ease.InOutCubic));
+                } 
             }
+            
+            _disassemblyTweenSequence.AppendInterval(1f).SetLoops(-1, LoopType.Yoyo).Play();
         }
         
         [ContextMenu("Reset Planner")]
@@ -118,6 +137,15 @@ namespace PhysicsDisassembly
 
         private void ClearTweens()
         {
+            if (_disassemblyTweenSequence == null)
+            {
+                return;
+            }
+            
+            _disassemblyTweenSequence.Kill();
+            _disassemblyTweenSequence = null;
+            
+            /*
             if (_disassemblyTweens == null)
             {
                 return;
@@ -132,6 +160,13 @@ namespace PhysicsDisassembly
             }
             
             _disassemblyTweens = null;
+            */
         }
+
+        /*private void OnTweenPathCallback(int sequenceIndex, int pathIndex)
+        {
+            _disassemblySequence[sequenceIndex].PartObject.transform.rotation =
+                _disassemblySequence[sequenceIndex].Orientations[pathIndex];
+        }*/
     }
 }

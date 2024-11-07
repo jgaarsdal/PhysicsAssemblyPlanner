@@ -19,19 +19,23 @@ namespace PhysicsDisassembly.Simulation
             _configuration = configuration;
         }
         
-        public Vector3 CheckAndResolveCollision(SDFCollisionPart other)
+        // TODO: Make 2 private methods, one with torque, one without, and one public that calls depending on bool parameter
+        
+        public (Vector3 force, Vector3 torque) CheckAndResolveCollision(SDFCollisionPart other/*, bool addTorque = false*/)
         {
-            var force = Vector3.zero;
+            var totalForce = Vector3.zero;
+            var totalTorque = Vector3.zero;
             
             // Sample contact points using vertices of this part
             var contactPoints = _simulation.GetContactPoints(_partId);
             var velocity = _simulation.GetVelocity(_partId);
+            //var angularVelocity = _simulation.GetAngularVelocity(_partId);
+            
+            // Center of mass position
+            var centerPosition = _simulation.GetPosition(_partId);
             
             foreach (var contactPoint in contactPoints)
             {
-                // Get point velocity including angular contribution
-                var pointVelocity = velocity;
-
                 // Transform vertex to other object's local space and get grid position
                 var gridPos = other._sdf.WorldToGridPosition(contactPoint);
 
@@ -40,24 +44,41 @@ namespace PhysicsDisassembly.Simulation
                 var penetrationDistance = Mathf.Min(distance, 0f);
 
                 // Only process if there's penetration
-                if (penetrationDistance < 0f)
+                if (penetrationDistance < _configuration.SimulationCollisionThreshold)
                 {
                     // Calculate contact normal (gradient of SDF)
                     var normal = CalculateSDFGradient(other, contactPoint);
+                 
+                    // Calculate moment arm from center to contact point
+                    var r = addTorque 
+                        ? contactPoint - centerPosition
+                        : Vector3.zero;
+        
+                    // Calculate point velocity including angular contribution
+                    var pointVelocity = addTorque 
+                        ? velocity + Vector3.Cross(angularVelocity, r)
+                        : velocity;
                     
                     // Calculate penetration speed (ḋ = ∇g(x) · ẋ from paper)
                     var penetrationSpeed = Vector3.Dot(normal, pointVelocity);
 
                     // Calculate contact force using penalty model from paper:
                     // f_c = (-k_n + k_d * ḋ)d * n
-                    var contactForce = ((-_configuration.SimulationContactStiffness + _configuration.SimulationContactDamping * penetrationSpeed) * penetrationDistance) * normal;
+                    var contactForce = ((-_configuration.SimulationContactStiffness + _configuration.SimulationContactDamping 
+                        * penetrationSpeed) * penetrationDistance) * normal;
 
+                    // Calculate torque for this contact point: τ = r × F
+                    var contactTorque = addTorque 
+                        ? Vector3.Cross(r, contactForce)
+                        : Vector3.zero;
+                    
                     // Apply force and torque
-                    force += contactForce;
+                    totalForce += contactForce;
+                    totalTorque += contactTorque;
                 }
             }
 
-            return force;
+            return (totalForce, totalTorque);
         }
 
         private Vector3 CalculateSDFGradient(SDFCollisionPart other, Vector3 worldPos)
