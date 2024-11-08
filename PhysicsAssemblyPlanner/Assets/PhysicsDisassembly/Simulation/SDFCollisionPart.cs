@@ -19,9 +19,57 @@ namespace PhysicsDisassembly.Simulation
             _configuration = configuration;
         }
         
-        // TODO: Make 2 private methods, one with torque, one without, and one public that calls depending on bool parameter
+        public (Vector3 force, Vector3 torque) CheckAndResolveCollision(SDFCollisionPart other, bool addTorque = false)
+        {
+            return (CheckAndResolveCollisionTranslationOnly(other), Vector3.zero);
+            
+            /*
+            return addTorque
+                ? CheckAndResolveCollisionWithTorque(other)
+                : (CheckAndResolveCollisionTranslationOnly(other), Vector3.zero);
+            */
+        }
         
-        public (Vector3 force, Vector3 torque) CheckAndResolveCollision(SDFCollisionPart other/*, bool addTorque = false*/)
+        private Vector3 CheckAndResolveCollisionTranslationOnly(SDFCollisionPart other)
+        {
+            var totalForce = Vector3.zero;
+            
+            // Sample contact points using vertices of this part
+            var contactPoints = _simulation.GetContactPoints(_partId);
+            var velocity = _simulation.GetVelocity(_partId);
+            
+            foreach (var contactPoint in contactPoints)
+            {
+                // Transform vertex to other object's local space and get grid position
+                var gridPos = other._sdf.WorldToGridPosition(contactPoint);
+
+                // Get penetration distance (equation from paper: d = min(g(x), 0))
+                var distance = other._sdf.GetDistance(gridPos);
+                var penetrationDistance = Mathf.Min(distance, 0f);
+
+                // Only process if there's penetration
+                if (penetrationDistance < _configuration.SimulationCollisionThreshold)
+                {
+                    // Calculate contact normal (gradient of SDF)
+                    var normal = CalculateSDFGradient(other, contactPoint);
+                    
+                    // Calculate penetration speed (ḋ = ∇g(x) · ẋ from paper)
+                    var penetrationSpeed = Vector3.Dot(normal, velocity);
+
+                    // Calculate contact force using penalty model from paper:
+                    // f_c = (-k_n + k_d * ḋ)d * n
+                    var contactForce = ((-_configuration.SimulationContactStiffness + _configuration.SimulationContactDamping 
+                        * penetrationSpeed) * penetrationDistance) * normal;
+                    
+                    // Apply force
+                    totalForce += contactForce;
+                }
+            }
+
+            return totalForce;
+        }
+        
+        private (Vector3 force, Vector3 torque) CheckAndResolveCollisionWithTorque(SDFCollisionPart other)
         {
             var totalForce = Vector3.zero;
             var totalTorque = Vector3.zero;
@@ -29,7 +77,7 @@ namespace PhysicsDisassembly.Simulation
             // Sample contact points using vertices of this part
             var contactPoints = _simulation.GetContactPoints(_partId);
             var velocity = _simulation.GetVelocity(_partId);
-            //var angularVelocity = _simulation.GetAngularVelocity(_partId);
+            var angularVelocity = _simulation.GetAngularVelocity(_partId);
             
             // Center of mass position
             var centerPosition = _simulation.GetPosition(_partId);
@@ -50,14 +98,10 @@ namespace PhysicsDisassembly.Simulation
                     var normal = CalculateSDFGradient(other, contactPoint);
                  
                     // Calculate moment arm from center to contact point
-                    var r = addTorque 
-                        ? contactPoint - centerPosition
-                        : Vector3.zero;
+                    var r = contactPoint - centerPosition;
         
                     // Calculate point velocity including angular contribution
-                    var pointVelocity = addTorque 
-                        ? velocity + Vector3.Cross(angularVelocity, r)
-                        : velocity;
+                    var pointVelocity = velocity + Vector3.Cross(angularVelocity, r);
                     
                     // Calculate penetration speed (ḋ = ∇g(x) · ẋ from paper)
                     var penetrationSpeed = Vector3.Dot(normal, pointVelocity);
@@ -68,9 +112,7 @@ namespace PhysicsDisassembly.Simulation
                         * penetrationSpeed) * penetrationDistance) * normal;
 
                     // Calculate torque for this contact point: τ = r × F
-                    var contactTorque = addTorque 
-                        ? Vector3.Cross(r, contactForce)
-                        : Vector3.zero;
+                    var contactTorque = Vector3.Cross(r, contactForce);
                     
                     // Apply force and torque
                     totalForce += contactForce;

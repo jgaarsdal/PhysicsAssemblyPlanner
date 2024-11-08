@@ -1979,10 +1979,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _assemblyRoot: {fileID: 1242350215}
   _useRotation: 1
-  _assemblyTimeoutSecs: 600
-  _partTimeoutSecs: 500
-  _useRandomSeed: 1
-  _fixedSeed: 484
+  _assemblyTimeoutSecs: 3600
+  _partTimeoutSecs: 2600
+  _useRandomSeed: 0
+  _fixedSeed: 31
   _verbose: 1
   _bfsStatePositionThreshold: 0.05
   _bfsStateAngleThreshold: 0.5

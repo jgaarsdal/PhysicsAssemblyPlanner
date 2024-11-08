@@ -46,19 +46,19 @@ namespace PhysicsDisassembly
             
             var actions = GetActions();
             
-            if (_useRotation)
+            /*if (_useRotation)
             {
                 var (status, duration, finalPath) = PlanRotation(initState, actions, timeoutSecs, maxDepth, verbose);
                 return (status, duration, finalPath);
             }
             else
-            {
-                var (status, duration, finalPath) = PlanTranslation(initState, actions, timeoutSecs, maxDepth, verbose);
+            {*/
+                var (status, duration, finalPath) = Plan(initState, actions, timeoutSecs, maxDepth, verbose);
                 return (status, duration, finalPath);
-            }
+            //}
         }
 
-        private (string status, float totalDurationSecs , Path path) PlanTranslation(State initState, float[][] actions, float timeoutSecs, int maxDepth, bool verbose = false)
+        private (string status, float totalDurationSecs , Path path) Plan(State initState, float[][] actions, float timeoutSecs, int maxDepth, bool verbose = false)
         {
             var status = "Failure";
             
