@@ -1,63 +1,87 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace PhysicsDisassembly
 {
     public class Tree
     {
-        private Dictionary<State, List<(State, Vector3, List<State>)>> _edges =
-            new Dictionary<State, List<(State, Vector3, List<State>)>>();
-
-        private List<State> _nodes = new List<State>();
+        private Dictionary<State, int> _nodes = new();
+        private Dictionary<State, List<Edge>> _outEdges = new();
+        private Dictionary<State, Edge> _inEdges = new();
+        private int _nodeIdx = 0;
+        private State _rootNode = default;
 
         public void AddNode(State state)
         {
-            if (!_nodes.Contains(state))
+            if (!_nodes.ContainsKey(state))
             {
-                _nodes.Add(state);
-                _edges[state] = new List<(State, Vector3, List<State>)>();
+                _nodes[state] = _nodeIdx;
+                _outEdges[state] = new List<Edge>();
+                _nodeIdx++;
+
+                if (_nodeIdx == 1)
+                {
+                    _rootNode = state;
+                }
             }
         }
 
-        public void AddEdge(State from, State to, Vector3 action, List<State> statesBetween)
+        public void AddEdge(State stateSrc, State stateTarget, float[] action, Stack<State> statesBetween)
         {
-            _edges[from].Add((to, action, statesBetween));
+            if (!_nodes.ContainsKey(stateSrc) || !_nodes.ContainsKey(stateTarget))
+            {
+                Debug.LogError("Tree: Source or target node doesn't exist");
+                return;
+            }
+
+            var edge = new Edge(stateSrc, stateTarget, action, statesBetween);
+            _outEdges[stateSrc].Add(edge);
+            _inEdges[stateTarget] = edge;
         }
 
-        public List<State> GetNodes()
+        public Edge GetInEdge(State state)
         {
-            return _nodes;
+            if (!_nodes.ContainsKey(state))
+            {
+                Debug.LogError("Tree: Node doesn't exist");
+                return null;
+            }
+
+            return _inEdges.GetValueOrDefault(state);
         }
 
-        /*public List<State> GetRootPath(State endState)
+        public List<State> GetPath(State startState, State endState)
         {
             var path = new List<State>();
-            var currentState = endState;
+            var state = endState;
 
-            while (currentState != null)
+            while (true)
             {
-                path.Add(currentState);
-                currentState = GetPredecessor(currentState);
+                path.Add(state);
+                if (state.Equals(startState))
+                {
+                    break;
+                }
+
+                var inEdge = GetInEdge(state);
+                if (inEdge == null)
+                {
+                    return null;
+                }
+
+                var revStatesBetween = inEdge.StatesBetween.ToArray().Reverse();
+                path.AddRange(revStatesBetween);
+                state = inEdge.Source;
             }
 
             path.Reverse();
             return path;
         }
 
-        private State GetPredecessor(State state)
+        public List<State> GetRootPath(State endState)
         {
-            foreach (var kvp in _edges)
-            {
-                foreach (var (to, _, _) in kvp.Value)
-                {
-                    if (to == state)
-                    {
-                        return kvp.Key;
-                    }
-                }
-            }
-            return null;
+            return GetPath(_rootNode, endState);
         }
-        */
     }
 }

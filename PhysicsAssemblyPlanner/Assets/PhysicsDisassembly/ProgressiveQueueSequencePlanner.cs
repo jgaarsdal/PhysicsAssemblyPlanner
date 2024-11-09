@@ -8,6 +8,9 @@ namespace PhysicsDisassembly
 {
     public class ProgressiveQueueSequencePlanner
     {
+        public Dictionary<string, GameObject> PartObjects => _partObjects;
+        public Dictionary<string, SignedDistanceField> PartSDFs => _partSDFs;
+        
         private List<string> _partIds = new List<string>();
         private Dictionary<string, GameObject> _partObjects = new Dictionary<string, GameObject>();
         private Dictionary<string, SignedDistanceField> _partSDFs = new Dictionary<string, SignedDistanceField>();

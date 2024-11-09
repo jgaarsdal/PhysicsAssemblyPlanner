@@ -6,6 +6,7 @@ namespace PhysicsDisassembly.Simulation
     {
         public Vector3 Position { get; set; }
         public Vector3 PivotPosition => Position - (Rotation * _centerOffset);
+        public Vector3 PivotCenterOffset => _centerOffset;
         public Quaternion Rotation { get; set; }
         public Vector3 Scale { get; set; }
         public Vector3 Velocity { get; set; }

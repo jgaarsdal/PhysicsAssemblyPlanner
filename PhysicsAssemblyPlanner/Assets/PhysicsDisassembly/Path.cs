@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace PhysicsDisassembly
 {
-    public struct Path
+    public class Path
     {
         public string PartID { get; private set; }
         public GameObject PartObject { get; set; }

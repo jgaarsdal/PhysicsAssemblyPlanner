@@ -155,18 +155,18 @@ MonoBehaviour:
   _useRandomSeed: 1
   _fixedSeed: 44
   _verbose: 1
-  _bfsStatePositionThreshold: 0.05
+  _bfsStatePositionThreshold: 0.21
   _bfsStateAngleThreshold: 0.5
   _simulationForce: 10
-  _simulationTorque: 1
+  _simulationTorque: 200
   _simulationTimeStep: 0.0005
   _simulationFrameSkip: 90
   _simulationContactStiffness: 20
   _simulationContactDamping: 1
   _simulationMaxVelocity: 0.0025
-  _simulationMaxAngularVelocity: 0.0025
+  _simulationMaxAngularVelocity: 0.05
   _simulationContactPointCount: 1024
-  _simulationCollisionThreshold: 0
+  _simulationCollisionThreshold: -0.03
   _sdfDefaultCellSize: 0.05
   _sdfBoxPadding: 0.1
   _useGPU: 1
@@ -229,18 +229,18 @@ MonoBehaviour:
   _useRandomSeed: 1
   _fixedSeed: 44
   _verbose: 1
-  _bfsStatePositionThreshold: 0.05
+  _bfsStatePositionThreshold: 0.21
   _bfsStateAngleThreshold: 0.5
   _simulationForce: 10
-  _simulationTorque: 1
+  _simulationTorque: 200
   _simulationTimeStep: 0.0005
   _simulationFrameSkip: 90
   _simulationContactStiffness: 20
   _simulationContactDamping: 1
   _simulationMaxVelocity: 0.0025
-  _simulationMaxAngularVelocity: 0.0025
+  _simulationMaxAngularVelocity: 0.05
   _simulationContactPointCount: 1024
-  _simulationCollisionThreshold: 0
+  _simulationCollisionThreshold: -0.03
   _sdfDefaultCellSize: 0.05
   _sdfBoxPadding: 0.1
   _useGPU: 1
@@ -1410,18 +1410,18 @@ MonoBehaviour:
   _useRandomSeed: 1
   _fixedSeed: 44
   _verbose: 1
-  _bfsStatePositionThreshold: 0.05
+  _bfsStatePositionThreshold: 0.21
   _bfsStateAngleThreshold: 0.5
   _simulationForce: 10
-  _simulationTorque: 1
+  _simulationTorque: 200
   _simulationTimeStep: 0.0005
   _simulationFrameSkip: 90
   _simulationContactStiffness: 20
   _simulationContactDamping: 1
   _simulationMaxVelocity: 0.0025
-  _simulationMaxAngularVelocity: 0.0025
+  _simulationMaxAngularVelocity: 0.05
   _simulationContactPointCount: 1024
-  _simulationCollisionThreshold: 0
+  _simulationCollisionThreshold: -0.03
   _sdfDefaultCellSize: 0.05
   _sdfBoxPadding: 0.1
   _useGPU: 1
@@ -1546,18 +1546,18 @@ MonoBehaviour:
   _useRandomSeed: 1
   _fixedSeed: 44
   _verbose: 1
-  _bfsStatePositionThreshold: 0.05
+  _bfsStatePositionThreshold: 0.21
   _bfsStateAngleThreshold: 0.5
   _simulationForce: 10
-  _simulationTorque: 1
+  _simulationTorque: 200
   _simulationTimeStep: 0.0005
   _simulationFrameSkip: 90
   _simulationContactStiffness: 20
   _simulationContactDamping: 1
   _simulationMaxVelocity: 0.0025
-  _simulationMaxAngularVelocity: 0.0025
+  _simulationMaxAngularVelocity: 0.05
   _simulationContactPointCount: 1024
-  _simulationCollisionThreshold: 0
+  _simulationCollisionThreshold: -0.03
   _sdfDefaultCellSize: 0.05
   _sdfBoxPadding: 0.1
   _useGPU: 1
@@ -1662,7 +1662,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &974275547
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1677,23 +1677,23 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _assemblyRoot: {fileID: 974275546}
   _useRotation: 0
-  _assemblyTimeoutSecs: 20
-  _partTimeoutSecs: 10
+  _assemblyTimeoutSecs: 200
+  _partTimeoutSecs: 170
   _useRandomSeed: 1
   _fixedSeed: 44
   _verbose: 1
-  _bfsStatePositionThreshold: 0.05
+  _bfsStatePositionThreshold: 0.21
   _bfsStateAngleThreshold: 0.5
   _simulationForce: 10
-  _simulationTorque: 1
+  _simulationTorque: 200
   _simulationTimeStep: 0.0005
   _simulationFrameSkip: 90
   _simulationContactStiffness: 20
   _simulationContactDamping: 1
   _simulationMaxVelocity: 0.0025
-  _simulationMaxAngularVelocity: 0.0025
+  _simulationMaxAngularVelocity: 0.05
   _simulationContactPointCount: 1024
-  _simulationCollisionThreshold: 0
+  _simulationCollisionThreshold: -0.03
   _sdfDefaultCellSize: 0.05
   _sdfBoxPadding: 0.1
   _useGPU: 1
@@ -1947,7 +1947,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1242350216
 Transform:
   m_ObjectHideFlags: 0
@@ -1984,7 +1984,7 @@ MonoBehaviour:
   _useRandomSeed: 0
   _fixedSeed: 31
   _verbose: 1
-  _bfsStatePositionThreshold: 0.05
+  _bfsStatePositionThreshold: 0.21
   _bfsStateAngleThreshold: 0.5
   _simulationForce: 10
   _simulationTorque: 200
@@ -2263,18 +2263,18 @@ MonoBehaviour:
   _useRandomSeed: 1
   _fixedSeed: 44
   _verbose: 1
-  _bfsStatePositionThreshold: 0.05
+  _bfsStatePositionThreshold: 0.21
   _bfsStateAngleThreshold: 0.5
   _simulationForce: 10
-  _simulationTorque: 1
+  _simulationTorque: 200
   _simulationTimeStep: 0.0005
   _simulationFrameSkip: 90
   _simulationContactStiffness: 20
   _simulationContactDamping: 1
   _simulationMaxVelocity: 0.0025
-  _simulationMaxAngularVelocity: 0.0025
+  _simulationMaxAngularVelocity: 0.05
   _simulationContactPointCount: 1024
-  _simulationCollisionThreshold: 0
+  _simulationCollisionThreshold: -0.03
   _sdfDefaultCellSize: 0.05
   _sdfBoxPadding: 0.1
   _useGPU: 1
@@ -2835,7 +2835,7 @@ MonoBehaviour:
   _useRandomSeed: 1
   _fixedSeed: 484
   _verbose: 1
-  _bfsStatePositionThreshold: 0.05
+  _bfsStatePositionThreshold: 0.21
   _bfsStateAngleThreshold: 0.5
   _simulationForce: 10
   _simulationTorque: 200
@@ -3062,18 +3062,18 @@ MonoBehaviour:
   _useRandomSeed: 1
   _fixedSeed: 44
   _verbose: 1
-  _bfsStatePositionThreshold: 0.05
+  _bfsStatePositionThreshold: 0.21
   _bfsStateAngleThreshold: 0.5
   _simulationForce: 10
-  _simulationTorque: 1
+  _simulationTorque: 200
   _simulationTimeStep: 0.0005
   _simulationFrameSkip: 90
   _simulationContactStiffness: 20
   _simulationContactDamping: 1
   _simulationMaxVelocity: 0.0025
-  _simulationMaxAngularVelocity: 0.0025
+  _simulationMaxAngularVelocity: 0.05
   _simulationContactPointCount: 1024
-  _simulationCollisionThreshold: 0
+  _simulationCollisionThreshold: -0.03
   _sdfDefaultCellSize: 0.05
   _sdfBoxPadding: 0.1
   _useGPU: 1
@@ -3170,18 +3170,18 @@ MonoBehaviour:
   _useRandomSeed: 1
   _fixedSeed: 44
   _verbose: 1
-  _bfsStatePositionThreshold: 0.05
+  _bfsStatePositionThreshold: 0.21
   _bfsStateAngleThreshold: 0.5
   _simulationForce: 10
-  _simulationTorque: 1
+  _simulationTorque: 200
   _simulationTimeStep: 0.0005
   _simulationFrameSkip: 90
   _simulationContactStiffness: 20
   _simulationContactDamping: 1
   _simulationMaxVelocity: 0.0025
-  _simulationMaxAngularVelocity: 0.0025
+  _simulationMaxAngularVelocity: 0.05
   _simulationContactPointCount: 1024
-  _simulationCollisionThreshold: 0
+  _simulationCollisionThreshold: -0.03
   _sdfDefaultCellSize: 0.05
   _sdfBoxPadding: 0.1
   _useGPU: 1
@@ -3238,18 +3238,18 @@ MonoBehaviour:
   _useRandomSeed: 1
   _fixedSeed: 44
   _verbose: 1
-  _bfsStatePositionThreshold: 0.05
+  _bfsStatePositionThreshold: 0.21
   _bfsStateAngleThreshold: 0.5
   _simulationForce: 10
-  _simulationTorque: 1
+  _simulationTorque: 200
   _simulationTimeStep: 0.0005
   _simulationFrameSkip: 90
   _simulationContactStiffness: 20
   _simulationContactDamping: 1
   _simulationMaxVelocity: 0.0025
-  _simulationMaxAngularVelocity: 0.0025
+  _simulationMaxAngularVelocity: 0.05
   _simulationContactPointCount: 1024
-  _simulationCollisionThreshold: 0
+  _simulationCollisionThreshold: -0.03
   _sdfDefaultCellSize: 0.05
   _sdfBoxPadding: 0.1
   _useGPU: 1

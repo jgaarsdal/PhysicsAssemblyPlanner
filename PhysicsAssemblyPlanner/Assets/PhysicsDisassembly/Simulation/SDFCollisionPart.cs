@@ -19,6 +19,28 @@ namespace PhysicsDisassembly.Simulation
             _configuration = configuration;
         }
         
+        public bool CheckCollision(SDFCollisionPart other)
+        {
+            var contactPoints = _simulation.GetContactPoints(_partId);
+            foreach (var contactPoint in contactPoints)
+            {
+                // Transform vertex to other object's local space and get grid position
+                var gridPos = other._sdf.WorldToGridPosition(contactPoint);
+
+                // Get penetration distance (equation from paper: d = min(g(x), 0))
+                var distance = other._sdf.GetDistance(gridPos);
+                var penetrationDistance = Mathf.Min(distance, 0f);
+
+                // Only process if there's penetration
+                if (penetrationDistance < _configuration.SimulationCollisionThreshold)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+        
         public (Vector3 force, Vector3 torque) CheckAndResolveCollision(SDFCollisionPart other, bool addTorque = false)
         {
             return (CheckAndResolveCollisionTranslationOnly(other), Vector3.zero);
@@ -34,7 +56,6 @@ namespace PhysicsDisassembly.Simulation
         {
             var totalForce = Vector3.zero;
             
-            // Sample contact points using vertices of this part
             var contactPoints = _simulation.GetContactPoints(_partId);
             var velocity = _simulation.GetVelocity(_partId);
             
@@ -74,7 +95,6 @@ namespace PhysicsDisassembly.Simulation
             var totalForce = Vector3.zero;
             var totalTorque = Vector3.zero;
             
-            // Sample contact points using vertices of this part
             var contactPoints = _simulation.GetContactPoints(_partId);
             var velocity = _simulation.GetVelocity(_partId);
             var angularVelocity = _simulation.GetAngularVelocity(_partId);

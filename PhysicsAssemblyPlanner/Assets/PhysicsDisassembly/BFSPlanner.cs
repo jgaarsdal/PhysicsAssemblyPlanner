@@ -66,7 +66,7 @@ namespace PhysicsDisassembly
             stateQueue.Enqueue((initState, new Path(_moveId, _partObjects[_moveId])));
 
             var path = GetPath(new List<State> { initState });
-            
+
             var startTime = Time.realtimeSinceStartup;
             var step = 0;
             
@@ -93,7 +93,7 @@ namespace PhysicsDisassembly
                     while (true)
                     {
                         SetState(GetState());
-
+                        
                         if (verbose)
                         {
                             var s = GetState();
@@ -103,11 +103,11 @@ namespace PhysicsDisassembly
                         for (var i = 0; i < _physicsConfiguration.SimulationFrameSkip; i++)
                         {
                             _simulation.Forward(1);
-                            _simulation.CheckCollisions(_moveId);
+                            _simulation.CheckAndResolveCollisions(_moveId);
                             
                             newState = GetState();
                             tempPath.AddState(newState);
-                            
+
                             var durationSecs = Time.realtimeSinceStartup - startTime;
                             if (durationSecs > timeoutSecs)
                             {
@@ -121,7 +121,7 @@ namespace PhysicsDisassembly
                             var s = GetState();
                             Debug.Log($"State AFTER: pivotPos={s.PivotPosition}, vel={s.Velocity}");
                         }
-
+                        
                         if (IsDisassembled())
                         {
                             status = "Success";
@@ -208,7 +208,7 @@ namespace PhysicsDisassembly
                             for (var i = 0; i < _physicsConfiguration.SimulationFrameSkip; i++)
                             {
                                 _simulation.Forward(1);
-                                _simulation.CheckCollisions(_moveId);
+                                _simulation.CheckAndResolveCollisions(_moveId);
                                 
                                 newState = GetState();
                                 tempPath.AddState(newState);
@@ -409,6 +409,21 @@ namespace PhysicsDisassembly
 
             return statePath;
         }
+        
+        /*
+        private Path GetPath(Tree tree, State endState)
+        {
+            var states = tree.GetRootPath(endState);
+            var path = new Path(_moveId, _partObjects[_moveId]);
+
+            foreach (var state in states)
+            {
+                path.AddState(state);
+            }
+
+            return path;
+        }
+        */
 
         private void CalculateBounds()
         {

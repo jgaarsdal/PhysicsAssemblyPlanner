@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using DG.Tweening;
+using PhysicsDisassembly.Simulation;
 using UnityEngine;
 
 namespace PhysicsDisassembly
@@ -36,6 +37,10 @@ namespace PhysicsDisassembly
         [SerializeField] private float _sdfDefaultCellSize = 0.05f;
         [SerializeField] private float _sdfBoxPadding = 0.1f;
         [SerializeField] private bool _useGPU = true;
+        
+        [Header("Path Simplifier Settings")]
+        [SerializeField] private float _minimumProgressThreshold = 0.1f;
+        [SerializeField] private int _transitionTestSteps = 10;
         
         private ProgressiveQueueSequencePlanner _assemblyPlanner;
         private Sequence _disassemblyTweenSequence;
@@ -88,8 +93,20 @@ namespace PhysicsDisassembly
             var (status, sequence, seqCount, totalDuration) = _assemblyPlanner.PlanSequence(randomSeed);
 
             Debug.Log($"Finished planning with status '{status}' and random seed '{randomSeed}'");
+
+            var physicsSimulation = new PhysicsSimulation(_assemblyPlanner.PartObjects, _assemblyPlanner.PartSDFs, _useRotation, configuration.PhysicsSimulationConfiguration);
+            var simplifiedSequence = new List<Path>();
+            foreach (var partPath in sequence)
+            {
+                var pathSimplifier = new PathSimplifier(physicsSimulation, partPath.PartID, _useRotation, _minimumProgressThreshold, _transitionTestSteps, _verbose);
+                var simplifiedPath = pathSimplifier.SimplifyPath(partPath);
+                
+                simplifiedSequence.Add(simplifiedPath);
+                
+                Debug.Log($"Finished simplifying part '{partPath.PartID}' from {partPath.Positions.Count} states to {simplifiedPath.Positions.Count} states");
+            }
             
-            _disassemblySequence = sequence;
+            _disassemblySequence = simplifiedSequence;
             
             ClearTweens();
             
@@ -103,14 +120,21 @@ namespace PhysicsDisassembly
                 
                 Debug.Log($"Sequence #{i} has {positions.Count} positions/rotations");
 
-                var stepInterval = positions.Count / 100;
+                var stepInterval = positions.Count > 200 
+                    ? Mathf.FloorToInt(positions.Count / 100f) 
+                    : 1;
+
+                var pointDuration = positions.Count > 200
+                    ? 4f / (positions.Count / 100f)
+                    : 4f / positions.Count;
+                
                 for (var j = 0; j < positions.Count; j += stepInterval)
                 {
                     // Add position and rotation tweens to run in parallel
                     _disassemblyTweenSequence.Append(
-                        sequenceTransform.DOMove(positions[j], 0.059f)
+                        sequenceTransform.DOMove(positions[j], pointDuration)
                             .SetEase(Ease.InOutCubic))
-                        .Join(sequenceTransform.DORotateQuaternion(rotations[j], 0.059f)
+                        .Join(sequenceTransform.DORotateQuaternion(rotations[j], pointDuration)
                             .SetEase(Ease.InOutCubic));
                 } 
             }

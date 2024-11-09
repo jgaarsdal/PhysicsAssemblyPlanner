@@ -39,6 +39,11 @@ namespace PhysicsDisassembly.Simulation
             }
         }
 
+        public Part GetPart(string partId)
+        {
+            return _parts[partId];
+        }
+        
         public Vector3 GetPosition(string partId)
         {
             return _parts[partId].Position;
@@ -129,7 +134,33 @@ namespace PhysicsDisassembly.Simulation
             }
         }
 
-        public void CheckCollisions(string movingPartId)
+        public bool CheckCollisions(string movingPartId)
+        {
+            var stillCollisionParts = _collisionParts
+                .Where(kvp => kvp.Key != movingPartId)
+                .Select(kvp => kvp.Value)
+                .ToArray();
+
+            var movingPart = _collisionParts[movingPartId];
+
+            var hasCollision = false;
+            var lockObj = new object();
+            Parallel.ForEach(stillCollisionParts, (stillPart, state) =>
+            {
+                if (movingPart.CheckCollision(stillPart))
+                {
+                    lock (lockObj)
+                    {
+                        hasCollision = true;
+                    }
+                    state.Stop();
+                }
+            });
+
+            return hasCollision;
+        }
+        
+        public void CheckAndResolveCollisions(string movingPartId)
         {
             var stillCollisionParts = _collisionParts
                 .Where(kvp => kvp.Key != movingPartId)
