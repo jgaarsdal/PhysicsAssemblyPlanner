@@ -9,17 +9,17 @@ namespace PhysicsDisassembly
         private string _partId;
         private Vector3 _partPivotCenterOffset;
         private bool _useRotation;
+        private bool _useSDFCollision;
         private bool _verbose;
         
         // Minimum distance to consider as progress
         private float _minProgressThreshold;
         private int _transitionTestSteps;
 
-        public PathSimplifier(PhysicsSimulation simulation, string partId, bool useRotation, float minProgressThreshold = 0.1f, int transitionTestSteps = 10, bool verbose = false)
+        public PathSimplifier(PhysicsSimulation simulation, string partId, float minProgressThreshold = 0.1f, int transitionTestSteps = 10, bool verbose = false)
         {
             _simulation = simulation;
             _partId = partId;
-            _useRotation = useRotation;
             _minProgressThreshold = minProgressThreshold;
             _transitionTestSteps = transitionTestSteps;
             _verbose = verbose;
@@ -27,8 +27,11 @@ namespace PhysicsDisassembly
             _partPivotCenterOffset = _simulation.GetPart(partId).PivotCenterOffset;
         }
 
-        public Path SimplifyPath(Path originalPath)
+        public Path SimplifyPath(Path originalPath, bool useRotation, bool useSDFCollision = true)
         {
+            _useRotation = useRotation;
+            _useSDFCollision = useSDFCollision;
+            
             _simulation.Reset();
             
             var simplifiedPath = new Path(_partId, originalPath.PartObject);
@@ -84,13 +87,18 @@ namespace PhysicsDisassembly
 
                 if (_useRotation)
                 {
+                    // TODO: Test this
                     var rotationProgress = CalculateRotationProgress(startRot, currentRot, endRot);
                     totalProgress = (totalProgress + rotationProgress) * 0.5f;
                 }
 
+                // TODO: 
+                
                 // Check if this state represents significant progress
-                if (totalProgress > bestProgress && totalProgress > previousProgress + _minProgressThreshold)
+                if (/*totalProgress > bestProgress && */totalProgress > /*previousProgress +*/ _minProgressThreshold)
                 {
+                    
+
                     // Verify we can move directly to this state
                     if (IsValidTransition(path.Positions[startIndex], path.Orientations[startIndex],
                             path.Positions[i], path.Orientations[i]))
@@ -118,13 +126,14 @@ namespace PhysicsDisassembly
             var startToCurrent = current - start;
 
             // Project current position onto start-goal vector
-            var projection = Vector3.Project(startToCurrent, startToGoal);
+            var projection = Vector3.Project(startToCurrent, startToGoal.normalized);
             var progressDistance = projection.magnitude;
 
             // Check if we're moving in the right direction
-            if (Vector3.Dot(startToGoal, projection) < 0)
+            //if (Vector3.Dot(startToGoal, projection) < 0f)
+            if (Vector3.Dot(startToGoal.normalized, startToCurrent.normalized) < -0.25f)
             {
-                progressDistance = 0;
+                progressDistance = 0f;
             }
 
             return Mathf.Clamp01(progressDistance / totalDistance);
@@ -156,9 +165,9 @@ namespace PhysicsDisassembly
             for (var i = 1; i <= _transitionTestSteps; i++)
             {
                 var t = i / (float)_transitionTestSteps;
-                
                 var testPos = Vector3.Lerp(startPos, endPos, t);
-                _simulation.SetPosition(_partId, testPos);
+                
+                _simulation.SetPivotPosition(_partId, testPos);
 
                 if (_useRotation)
                 {
@@ -166,7 +175,9 @@ namespace PhysicsDisassembly
                     _simulation.SetRotation(_partId, testRot);
                 }
                 
-                if (_simulation.CheckCollisions(_partId))
+                _simulation.UpdateParts();
+                
+                if (_simulation.CheckCollisions(_partId, _useSDFCollision))
                 {
                     return false;
                 }

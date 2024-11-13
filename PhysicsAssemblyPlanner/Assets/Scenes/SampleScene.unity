@@ -170,6 +170,13 @@ MonoBehaviour:
   _sdfDefaultCellSize: 0.05
   _sdfBoxPadding: 0.1
   _useGPU: 1
+  _rrtStepSize: 0.1
+  _rrtRotationStepSize: 15
+  _rrtMaxIterations: 10000
+  _rrtConnectDistance: 1
+  _rrtRandomPointAttempts: 10
+  _minimumProgressThreshold: 0.1
+  _transitionTestSteps: 10
 --- !u!4 &7235804
 Transform:
   m_ObjectHideFlags: 0
@@ -192,6 +199,86 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 760a508d568b2994fb54e44d0ef63e1d,
     type: 3}
   m_PrefabInstance: {fileID: 973714092}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &77002863
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 936974376}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: 0c6b7aba16113844db14a14e35006597,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 0c6b7aba16113844db14a14e35006597,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -2
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 0c6b7aba16113844db14a14e35006597,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 0c6b7aba16113844db14a14e35006597,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 0c6b7aba16113844db14a14e35006597,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 0c6b7aba16113844db14a14e35006597,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 0c6b7aba16113844db14a14e35006597,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 0c6b7aba16113844db14a14e35006597,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 0c6b7aba16113844db14a14e35006597,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 0c6b7aba16113844db14a14e35006597,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 0c6b7aba16113844db14a14e35006597,
+        type: 3}
+      propertyPath: m_Name
+      value: 0 (1)
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 0c6b7aba16113844db14a14e35006597, type: 3}
+--- !u!4 &77002864 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 0c6b7aba16113844db14a14e35006597,
+    type: 3}
+  m_PrefabInstance: {fileID: 77002863}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &77002865 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 0c6b7aba16113844db14a14e35006597,
+    type: 3}
+  m_PrefabInstance: {fileID: 77002863}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &89689198
 GameObject:
@@ -244,6 +331,13 @@ MonoBehaviour:
   _sdfDefaultCellSize: 0.05
   _sdfBoxPadding: 0.1
   _useGPU: 1
+  _rrtStepSize: 0.1
+  _rrtRotationStepSize: 15
+  _rrtMaxIterations: 10000
+  _rrtConnectDistance: 1
+  _rrtRandomPointAttempts: 10
+  _minimumProgressThreshold: 0.1
+  _transitionTestSteps: 10
 --- !u!4 &89689200
 Transform:
   m_ObjectHideFlags: 0
@@ -909,6 +1003,13 @@ MonoBehaviour:
   _sdfDefaultCellSize: 0.05
   _sdfBoxPadding: 0.1
   _useGPU: 1
+  _rrtStepSize: 0.1
+  _rrtRotationStepSize: 15
+  _rrtMaxIterations: 10000
+  _rrtConnectDistance: 1
+  _rrtRandomPointAttempts: 10
+  _minimumProgressThreshold: 0.1
+  _transitionTestSteps: 10
 --- !u!4 &473839355
 Transform:
   m_ObjectHideFlags: 0
@@ -1384,13 +1485,14 @@ GameObject:
   m_Component:
   - component: {fileID: 936974376}
   - component: {fileID: 936974375}
+  - component: {fileID: 936974377}
   m_Layer: 0
   m_Name: CollisionTest (6)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &936974375
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1398,7 +1500,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 936974374}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ed8e1017fae339a458d70ef35ae7d64f, type: 3}
   m_Name: 
@@ -1425,6 +1527,13 @@ MonoBehaviour:
   _sdfDefaultCellSize: 0.05
   _sdfBoxPadding: 0.1
   _useGPU: 1
+  _rrtStepSize: 0.1
+  _rrtRotationStepSize: 15
+  _rrtMaxIterations: 10000
+  _rrtConnectDistance: 1
+  _rrtRandomPointAttempts: 10
+  _minimumProgressThreshold: 0.1
+  _transitionTestSteps: 10
 --- !u!4 &936974376
 Transform:
   m_ObjectHideFlags: 0
@@ -1439,9 +1548,35 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 594983386}
+  - {fileID: 77002864}
   - {fileID: 1595949030}
   m_Father: {fileID: 1569423311}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &936974377
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 936974374}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4b05ce45669fdbf4a862d7a5c40dfc2f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _testObject: {fileID: 1509165090}
+  _otherObjects:
+  - {fileID: 1392932602}
+  _testObjectEndState: {fileID: 77002865}
+  _rrtStepSize: 0.5
+  _rrtRotationStepSize: 5
+  _rrtMaxIterations: 1000
+  _rrtConnectDistance: 1
+  _rrtRandomPointAttempts: 10
+  _rrtWorkspaceBoundsBuffer: 0.5
+  _rrtExplorationBias: 0.5
+  _minimumProgressThreshold: 0.01
+  _transitionTestSteps: 10
 --- !u!1001 &942785136
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1561,6 +1696,13 @@ MonoBehaviour:
   _sdfDefaultCellSize: 0.05
   _sdfBoxPadding: 0.1
   _useGPU: 1
+  _rrtStepSize: 0.1
+  _rrtRotationStepSize: 15
+  _rrtMaxIterations: 10000
+  _rrtConnectDistance: 1
+  _rrtRandomPointAttempts: 10
+  _minimumProgressThreshold: 0.1
+  _transitionTestSteps: 10
 --- !u!4 &956830380
 Transform:
   m_ObjectHideFlags: 0
@@ -1662,7 +1804,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &974275547
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1697,6 +1839,13 @@ MonoBehaviour:
   _sdfDefaultCellSize: 0.05
   _sdfBoxPadding: 0.1
   _useGPU: 1
+  _rrtStepSize: 0.1
+  _rrtRotationStepSize: 15
+  _rrtMaxIterations: 10000
+  _rrtConnectDistance: 1
+  _rrtRandomPointAttempts: 10
+  _minimumProgressThreshold: 0.1
+  _transitionTestSteps: 10
 --- !u!4 &974275549
 Transform:
   m_ObjectHideFlags: 0
@@ -1765,6 +1914,13 @@ MonoBehaviour:
   _sdfDefaultCellSize: 0.05
   _sdfBoxPadding: 0.1
   _useGPU: 1
+  _rrtStepSize: 0.1
+  _rrtRotationStepSize: 15
+  _rrtMaxIterations: 10000
+  _rrtConnectDistance: 1
+  _rrtRandomPointAttempts: 10
+  _minimumProgressThreshold: 0.1
+  _transitionTestSteps: 10
 --- !u!4 &1021582444
 Transform:
   m_ObjectHideFlags: 0
@@ -1999,6 +2155,13 @@ MonoBehaviour:
   _sdfDefaultCellSize: 0.05
   _sdfBoxPadding: 0.1
   _useGPU: 1
+  _rrtStepSize: 0.1
+  _rrtRotationStepSize: 15
+  _rrtMaxIterations: 10000
+  _rrtConnectDistance: 1
+  _rrtRandomPointAttempts: 10
+  _minimumProgressThreshold: 0.1
+  _transitionTestSteps: 10
 --- !u!1 &1255209141
 GameObject:
   m_ObjectHideFlags: 0
@@ -2227,6 +2390,12 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 41ae3afeca68404478a7fc6d829b3b84, type: 3}
+--- !u!1 &1392932602 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 41ae3afeca68404478a7fc6d829b3b84,
+    type: 3}
+  m_PrefabInstance: {fileID: 1392932601}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1456392354
 GameObject:
   m_ObjectHideFlags: 0
@@ -2278,6 +2447,13 @@ MonoBehaviour:
   _sdfDefaultCellSize: 0.05
   _sdfBoxPadding: 0.1
   _useGPU: 1
+  _rrtStepSize: 0.1
+  _rrtRotationStepSize: 15
+  _rrtMaxIterations: 10000
+  _rrtConnectDistance: 1
+  _rrtRandomPointAttempts: 10
+  _minimumProgressThreshold: 0.1
+  _transitionTestSteps: 10
 --- !u!4 &1456392356
 Transform:
   m_ObjectHideFlags: 0
@@ -2469,12 +2645,12 @@ PrefabInstance:
     - target: {fileID: -8679921383154817045, guid: 0c6b7aba16113844db14a14e35006597,
         type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 0c6b7aba16113844db14a14e35006597,
         type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 0c6b7aba16113844db14a14e35006597,
         type: 3}
@@ -2496,11 +2672,52 @@ PrefabInstance:
       propertyPath: m_Name
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1151388028547126963, guid: 0c6b7aba16113844db14a14e35006597,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1151388028547126963, guid: 0c6b7aba16113844db14a14e35006597,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1151388028547126963, guid: 0c6b7aba16113844db14a14e35006597,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1151388028547126963, guid: 0c6b7aba16113844db14a14e35006597,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1151388028547126963, guid: 0c6b7aba16113844db14a14e35006597,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1151388028547126963, guid: 0c6b7aba16113844db14a14e35006597,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1151388028547126963, guid: 0c6b7aba16113844db14a14e35006597,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 0c6b7aba16113844db14a14e35006597, type: 3}
+--- !u!1 &1509165090 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 0c6b7aba16113844db14a14e35006597,
+    type: 3}
+  m_PrefabInstance: {fileID: 1509165089}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &1509213811 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 8f623c64d9e410147bcea828798172bf,
@@ -2850,6 +3067,13 @@ MonoBehaviour:
   _sdfDefaultCellSize: 0.05
   _sdfBoxPadding: 0.1
   _useGPU: 1
+  _rrtStepSize: 0.1
+  _rrtRotationStepSize: 15
+  _rrtMaxIterations: 10000
+  _rrtConnectDistance: 1
+  _rrtRandomPointAttempts: 10
+  _minimumProgressThreshold: 0.1
+  _transitionTestSteps: 10
 --- !u!4 &1713159411
 Transform:
   m_ObjectHideFlags: 0
@@ -3077,6 +3301,13 @@ MonoBehaviour:
   _sdfDefaultCellSize: 0.05
   _sdfBoxPadding: 0.1
   _useGPU: 1
+  _rrtStepSize: 0.1
+  _rrtRotationStepSize: 15
+  _rrtMaxIterations: 10000
+  _rrtConnectDistance: 1
+  _rrtRandomPointAttempts: 10
+  _minimumProgressThreshold: 0.1
+  _transitionTestSteps: 10
 --- !u!4 &1897091662
 Transform:
   m_ObjectHideFlags: 0
@@ -3185,6 +3416,13 @@ MonoBehaviour:
   _sdfDefaultCellSize: 0.05
   _sdfBoxPadding: 0.1
   _useGPU: 1
+  _rrtStepSize: 0.1
+  _rrtRotationStepSize: 15
+  _rrtMaxIterations: 10000
+  _rrtConnectDistance: 1
+  _rrtRandomPointAttempts: 10
+  _minimumProgressThreshold: 0.1
+  _transitionTestSteps: 10
 --- !u!4 &1944942509
 Transform:
   m_ObjectHideFlags: 0
@@ -3253,6 +3491,13 @@ MonoBehaviour:
   _sdfDefaultCellSize: 0.05
   _sdfBoxPadding: 0.1
   _useGPU: 1
+  _rrtStepSize: 0.1
+  _rrtRotationStepSize: 15
+  _rrtMaxIterations: 10000
+  _rrtConnectDistance: 1
+  _rrtRandomPointAttempts: 10
+  _minimumProgressThreshold: 0.1
+  _transitionTestSteps: 10
 --- !u!4 &1981633082
 Transform:
   m_ObjectHideFlags: 0

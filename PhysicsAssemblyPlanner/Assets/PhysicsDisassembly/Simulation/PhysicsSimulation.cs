@@ -27,7 +27,11 @@ namespace PhysicsDisassembly.Simulation
 
                 _parts[partId] = new Part(partObject.GetComponentInChildren<MeshFilter>().sharedMesh, partTransform.position,
                     partTransform.rotation, partTransform.localScale, configuration);
-                _collisionParts[partId] = new SDFCollisionPart(partId, this, partSDFs[partId], _configuration);
+
+                if (partSDFs != null && partSDFs.TryGetValue(partId, out var partSDF))
+                {
+                    _collisionParts[partId] = new SDFCollisionPart(partId, this, partSDF, _configuration);
+                }
             }
         }
 
@@ -46,7 +50,7 @@ namespace PhysicsDisassembly.Simulation
         
         public Vector3 GetPosition(string partId)
         {
-            return _parts[partId].Position;
+            return _parts[partId].CenterPosition;
         }
 
         public Vector3 GetPivotPosition(string partId)
@@ -69,9 +73,14 @@ namespace PhysicsDisassembly.Simulation
             return _parts[partId].AngularVelocity;
         }
 
-        public void SetPosition(string partId, Vector3 position)
+        public void SetCenterPosition(string partId, Vector3 position)
         {
-            _parts[partId].Position = position;
+            _parts[partId].CenterPosition = position;
+        }
+        
+        public void SetPivotPosition(string partId, Vector3 position)
+        {
+            _parts[partId].PivotPosition = position;
         }
 
         public void SetRotation(string partId, Quaternion rotation)
@@ -134,17 +143,41 @@ namespace PhysicsDisassembly.Simulation
             }
         }
 
-        public bool CheckCollisions(string movingPartId)
+        public bool CheckCollisions(string movingPartId, bool useSDFCollision = true)
         {
+            var hasCollision = false;
+            var lockObj = new object();
+            
+            if (!useSDFCollision)
+            {
+                var moveBounds = GetBounds(movingPartId);
+
+                var stillPartBounds = _parts
+                    .Where(kvp => kvp.Key != movingPartId)
+                    .Select(kvp => kvp.Value.Bounds)
+                    .ToArray();
+
+                Parallel.ForEach(stillPartBounds, (stillBounds, state) =>
+                {
+                    if (moveBounds.Intersects(stillBounds))
+                    {
+                        lock (lockObj)
+                        {
+                            hasCollision = true;
+                        }
+                        state.Stop();
+                    }
+                });
+                
+                return hasCollision;
+            }
+            
+            var movingPart = _collisionParts[movingPartId];
             var stillCollisionParts = _collisionParts
                 .Where(kvp => kvp.Key != movingPartId)
                 .Select(kvp => kvp.Value)
                 .ToArray();
-
-            var movingPart = _collisionParts[movingPartId];
-
-            var hasCollision = false;
-            var lockObj = new object();
+            
             Parallel.ForEach(stillCollisionParts, (stillPart, state) =>
             {
                 if (movingPart.CheckCollision(stillPart))

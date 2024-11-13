@@ -4,8 +4,26 @@ namespace PhysicsDisassembly.Simulation
 {
     public class Part
     {
-        public Vector3 Position { get; set; }
-        public Vector3 PivotPosition => Position - (Rotation * _centerOffset);
+        public Vector3 CenterPosition
+        {
+            get => _centerPosition;
+            set
+            {
+                _centerPosition = value;
+                _pivotPosition = _centerPosition - Rotation * _centerOffset;
+            } 
+        }
+        
+        public Vector3 PivotPosition
+        {
+            get => _pivotPosition;
+            set
+            {
+                _pivotPosition = value;
+                _centerPosition = _pivotPosition + Rotation *_centerOffset;
+            }
+        }
+        
         public Vector3 PivotCenterOffset => _centerOffset;
         public Quaternion Rotation { get; set; }
         public Vector3 Scale { get; set; }
@@ -15,6 +33,8 @@ namespace PhysicsDisassembly.Simulation
         public Vector3 Torque { get; private set; }
         public Bounds Bounds { get; private set; }
 
+        private Vector3 _centerPosition;
+        private Vector3 _pivotPosition;
         private Vector3 _initialTransformPosition;
         private Quaternion _initialRotation;
         private Vector3 _initialScale;
@@ -70,7 +90,7 @@ namespace PhysicsDisassembly.Simulation
             Force += force;
 
             // Calculate torque relative to current position
-            var r = worldPoint - Position;
+            var r = worldPoint - _centerPosition;
             Torque += Vector3.Cross(r, force);
         }
 
@@ -104,10 +124,8 @@ namespace PhysicsDisassembly.Simulation
         public void Update()
         {
             Rotation = NormalizeQuaternion(Rotation);
-
-            // Calculate transform position (pivot point) from center position
-            var pivotPosition = Position - Rotation * _centerOffset;
-            var transformMatrix = Matrix4x4.TRS(pivotPosition, Rotation, Scale);
+            
+            var transformMatrix = Matrix4x4.TRS(_pivotPosition, Rotation, Scale);
 
             _worldVertices[0] = transformMatrix.MultiplyPoint3x4(_localVertices[0]);
             var tempBounds = new Bounds(_worldVertices[0], Vector3.zero);
@@ -117,12 +135,15 @@ namespace PhysicsDisassembly.Simulation
                 tempBounds.Encapsulate(_worldVertices[i]);
             }
 
-            _worldContactPoints[0] = transformMatrix.MultiplyPoint3x4(_localContactPoints[0]);
-            var contactBounds = new Bounds(_worldContactPoints[0], Vector3.zero);
-            for (var i = 1; i < _contactPointCount; i++)
+            if (_localContactPoints != null && _localContactPoints.Length > 0)
             {
-                _worldContactPoints[i] = transformMatrix.MultiplyPoint3x4(_localContactPoints[i]);
-                contactBounds.Encapsulate(_worldContactPoints[i]);
+                _worldContactPoints[0] = transformMatrix.MultiplyPoint3x4(_localContactPoints[0]);
+                //var contactBounds = new Bounds(_worldContactPoints[0], Vector3.zero);
+                for (var i = 1; i < _contactPointCount; i++)
+                {
+                    _worldContactPoints[i] = transformMatrix.MultiplyPoint3x4(_localContactPoints[i]);
+                    //contactBounds.Encapsulate(_worldContactPoints[i]);
+                }
             }
             
             Bounds = tempBounds;
@@ -151,7 +172,7 @@ namespace PhysicsDisassembly.Simulation
             }
             
             // Update positions using new velocities
-            Position += Velocity;
+            _centerPosition += Velocity;
             Rotation *= Quaternion.Euler(AngularVelocity);
             
             // Reset forces and torques
@@ -171,7 +192,7 @@ namespace PhysicsDisassembly.Simulation
 
         public void Reset()
         {
-            Position = _initialTransformPosition + _initialRotation * _centerOffset;
+            PivotPosition = _initialTransformPosition;
             Rotation = _initialRotation;
             Scale = _initialScale;
             Velocity = Vector3.zero;

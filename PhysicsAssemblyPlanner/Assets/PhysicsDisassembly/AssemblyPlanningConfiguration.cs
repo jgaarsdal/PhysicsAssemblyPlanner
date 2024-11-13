@@ -9,6 +9,7 @@ namespace PhysicsDisassembly
         public float PartTimeoutSecs { get; set; }
         public PhysicsSimulationConfiguration PhysicsSimulationConfiguration { get; set; }
         public SDFCollisionConfiguration SDFCollisionConfiguration { get; set; }
+        public RRTConfiguration RRTConfiguration { get; set; }
         public bool Verbose { get; set; }
     }
     
@@ -36,7 +37,18 @@ namespace PhysicsDisassembly
     {
         public float SDFDefaultCellSize { get; set; }
         public float SDFBoxPadding { get; set; }
-        //public float SDFCollisionPenetrationThreshold { get; set; }
         public bool SDFUseGPU { get; set; }
+    }
+
+    public struct RRTConfiguration
+    {
+        public bool RRTUseRotation { get; set; }
+        public float RRTStepSize { get; set; }
+        public float RRTRotationStepSize { get; set; }
+        public int RRTMaxIterations { get; set; }
+        public float RRTConnectDistance { get; set; }
+        public int RRTRandomPointAttempts { get; set; }
+        public float RRTExplorationBias { get; set; } // 0 = pure exploitation, 1 = pure exploration
+        public float RRTWorkspaceBoundsBuffer { get; set; }
     }
 }

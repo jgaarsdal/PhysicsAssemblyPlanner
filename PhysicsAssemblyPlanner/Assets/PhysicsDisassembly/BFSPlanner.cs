@@ -290,7 +290,7 @@ namespace PhysicsDisassembly
 
         private void SetState(State state)
         {
-            _simulation.SetPosition(_moveId, state.Position);
+            _simulation.SetCenterPosition(_moveId, state.Position);
             _simulation.SetRotation(_moveId, state.Rotation);
             _simulation.SetVelocity(_moveId, state.Velocity);
             _simulation.SetAngularVelocity(_moveId, state.AngularVelocity);
@@ -409,21 +409,6 @@ namespace PhysicsDisassembly
 
             return statePath;
         }
-        
-        /*
-        private Path GetPath(Tree tree, State endState)
-        {
-            var states = tree.GetRootPath(endState);
-            var path = new Path(_moveId, _partObjects[_moveId]);
-
-            foreach (var state in states)
-            {
-                path.AddState(state);
-            }
-
-            return path;
-        }
-        */
 
         private void CalculateBounds()
         {
