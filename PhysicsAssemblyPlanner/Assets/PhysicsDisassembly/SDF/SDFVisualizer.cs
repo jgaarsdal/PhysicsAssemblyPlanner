@@ -23,7 +23,7 @@ namespace PhysicsDisassembly.SDF
 
         public async void VisualizeSDF()
         {
-            var sdf = new SignedDistanceField(this.gameObject, _sdfDefaultCellSize, _sdfBoxPadding, _useGPU);
+            var sdf = new SignedDistanceField(this.transform, _sdfDefaultCellSize, _sdfBoxPadding, _useGPU);
             await sdf.ComputeSDF();
 
             if (!_visualize)

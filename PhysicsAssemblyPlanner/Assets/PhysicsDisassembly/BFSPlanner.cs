@@ -8,7 +8,7 @@ namespace PhysicsDisassembly
 {
     public class BFSPlanner
     {
-        private Dictionary<string, GameObject> _partObjects;
+        private Dictionary<string, Transform> _partObjects;
         private string _moveId;
         private List<string> _stillIds;
         private bool _useRotation;
@@ -18,7 +18,7 @@ namespace PhysicsDisassembly
         private PhysicsSimulationConfiguration _physicsConfiguration;
         
         public BFSPlanner(string moveId, List<string> stillIds, bool useRotation,
-            Dictionary<string, GameObject> partObjects, Dictionary<string, SignedDistanceField> partSDFs, 
+            Dictionary<string, Transform> partObjects, Dictionary<string, SignedDistanceField> partSDFs, 
             BFSPlannerConfiguration plannerConfiguration, PhysicsSimulationConfiguration physicsConfiguration)
         {
             _partObjects = partObjects;

@@ -148,7 +148,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed8e1017fae339a458d70ef35ae7d64f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _assemblyRoot: {fileID: 7235802}
+  _assemblyRoot: {fileID: 7235804}
   _useRotation: 0
   _assemblyTimeoutSecs: 20
   _partTimeoutSecs: 10
@@ -271,12 +271,6 @@ PrefabInstance:
 --- !u!4 &77002864 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 0c6b7aba16113844db14a14e35006597,
-    type: 3}
-  m_PrefabInstance: {fileID: 77002863}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &77002865 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 0c6b7aba16113844db14a14e35006597,
     type: 3}
   m_PrefabInstance: {fileID: 77002863}
   m_PrefabAsset: {fileID: 0}
@@ -1505,7 +1499,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed8e1017fae339a458d70ef35ae7d64f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _assemblyRoot: {fileID: 936974374}
+  _assemblyRoot: {fileID: 936974376}
   _useRotation: 0
   _assemblyTimeoutSecs: 20
   _partTimeoutSecs: 10
@@ -1564,16 +1558,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b05ce45669fdbf4a862d7a5c40dfc2f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _testObject: {fileID: 1509165090}
+  _testObject: {fileID: 594983386}
   _otherObjects:
-  - {fileID: 1392932602}
-  _testObjectEndState: {fileID: 77002865}
+  - {fileID: 1595949030}
+  _testObjectEndState: {fileID: 77002864}
+  _rrtUseRotation: 1
   _rrtStepSize: 0.5
   _rrtRotationStepSize: 5
   _rrtMaxIterations: 1000
   _rrtConnectDistance: 1
   _rrtRandomPointAttempts: 10
-  _rrtWorkspaceBoundsBuffer: 0.5
+  _rrtWorkspaceBoundsBufferPercentage: 0.5
   _rrtExplorationBias: 0.5
   _minimumProgressThreshold: 0.01
   _transitionTestSteps: 10
@@ -1674,7 +1669,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed8e1017fae339a458d70ef35ae7d64f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _assemblyRoot: {fileID: 956830378}
+  _assemblyRoot: {fileID: 956830380}
   _useRotation: 0
   _assemblyTimeoutSecs: 20
   _partTimeoutSecs: 10
@@ -1817,7 +1812,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed8e1017fae339a458d70ef35ae7d64f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _assemblyRoot: {fileID: 974275546}
+  _assemblyRoot: {fileID: 974275549}
   _useRotation: 0
   _assemblyTimeoutSecs: 200
   _partTimeoutSecs: 170
@@ -2390,12 +2385,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 41ae3afeca68404478a7fc6d829b3b84, type: 3}
---- !u!1 &1392932602 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 41ae3afeca68404478a7fc6d829b3b84,
-    type: 3}
-  m_PrefabInstance: {fileID: 1392932601}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1456392354
 GameObject:
   m_ObjectHideFlags: 0
@@ -2712,12 +2701,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 0c6b7aba16113844db14a14e35006597, type: 3}
---- !u!1 &1509165090 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 0c6b7aba16113844db14a14e35006597,
-    type: 3}
-  m_PrefabInstance: {fileID: 1509165089}
-  m_PrefabAsset: {fileID: 0}
 --- !u!4 &1509213811 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 8f623c64d9e410147bcea828798172bf,
@@ -3279,7 +3262,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed8e1017fae339a458d70ef35ae7d64f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _assemblyRoot: {fileID: 1897091660}
+  _assemblyRoot: {fileID: 1897091662}
   _useRotation: 0
   _assemblyTimeoutSecs: 20
   _partTimeoutSecs: 10
@@ -3394,7 +3377,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed8e1017fae339a458d70ef35ae7d64f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _assemblyRoot: {fileID: 1944942507}
+  _assemblyRoot: {fileID: 1944942509}
   _useRotation: 0
   _assemblyTimeoutSecs: 20
   _partTimeoutSecs: 10
@@ -3469,7 +3452,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed8e1017fae339a458d70ef35ae7d64f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _assemblyRoot: {fileID: 1981633080}
+  _assemblyRoot: {fileID: 1981633082}
   _useRotation: 0
   _assemblyTimeoutSecs: 20
   _partTimeoutSecs: 10

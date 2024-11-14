@@ -4,31 +4,32 @@ using UnityEngine;
 
 namespace PhysicsDisassembly.RRTConnect
 {
-    // TODO: Use OBB for collision
-    
     public class RRTConnect
     {
+        private readonly bool _useRotation = false;
+        private readonly float _stepSize = 0.1f;
+        private readonly float _rotationStepSize = 15f; // degrees
+        private readonly int _maxIterations = 10000;
+        private readonly float _connectDistance = 1.0f;
+        private readonly int _randomPointAttempts = 10; // Number of random samples to test
+        private readonly float _explorationBias = 0.5f;
+        private readonly float _workspaceBoundsBufferPercentage = 0.5f;
+        private readonly string _partId;
+        private readonly Transform _partObject;
+        private readonly Transform[] _otherObjects;
+        
         private List<Node> _treeStart = new List<Node>();
         private List<Node> _treeGoal = new List<Node>();
-        private bool _useRotation = false;
-        private float _stepSize = 0.1f;
-        private float _rotationStepSize = 15f; // degrees
-        private int _maxIterations = 10000;
-        private float _connectDistance = 1.0f;
-        private int _randomPointAttempts = 10; // Number of random samples to test
-        private float _explorationBias = 0.5f;
-        private float _workspaceBoundsBuffer = 0.5f;
-        private string _partId;
-        private GameObject _partObject;
         private Bounds _partBounds;
         private Bounds[] _otherPartBounds;
         private Bounds _workspaceBounds;
         private bool _treesAreSwapped = false;
 
-        public RRTConnect(string partId, GameObject partObject, GameObject[] otherObjects, RRTConfiguration configuration)
+        public RRTConnect(string partId, Transform partObject, Transform[] otherObjects, RRTConfiguration configuration)
         {
             _partId = partId;
             _partObject = partObject;
+            _otherObjects = otherObjects;
 
             _useRotation = configuration.RRTUseRotation;
             _stepSize = configuration.RRTStepSize;
@@ -37,18 +38,18 @@ namespace PhysicsDisassembly.RRTConnect
             _connectDistance = configuration.RRTConnectDistance;
             _randomPointAttempts = configuration.RRTRandomPointAttempts;
             _explorationBias = configuration.RRTExplorationBias;
-            _workspaceBoundsBuffer = configuration.RRTWorkspaceBoundsBuffer;
-            
-            _partBounds = partObject.GetComponentInChildren<Renderer>().bounds;
-
-            _otherPartBounds = otherObjects
-                .Select(o => o.GetComponentInChildren<Renderer>().bounds)
-                .ToArray();
+            _workspaceBoundsBufferPercentage = configuration.RRTWorkspaceBoundsBufferPercentage;
         }
         
         public Path PlanPath(State startState, State goalState, State[] otherPartStates, int randomSeed)
         {
             UnityEngine.Random.InitState(randomSeed);
+            
+            // Get the moving part bounds at its start state
+            _partBounds = GetPartBounds(_partObject, startState, true);
+            
+            // Get the other parts bounds at their start states
+            _otherPartBounds = GetPartBounds(_otherObjects, otherPartStates, false);
             
             // Update the bounds of other parts
             for (var i = 0; i < _otherPartBounds.Length; i++)
@@ -93,20 +94,17 @@ namespace PhysicsDisassembly.RRTConnect
         
         private Bounds GetWorkspaceBounds(State startState, State goalState)
         {
-            var objectBounds = _partObject.GetComponentInChildren<Renderer>().bounds;
-
-            var workspaceBounds = new Bounds(startState.Position, objectBounds.size);
-            workspaceBounds.Encapsulate(new Bounds(goalState.Position, objectBounds.size));
+            var workspaceBounds = new Bounds(startState.Position, _partBounds.size);
+            workspaceBounds.Encapsulate(new Bounds(goalState.Position, _partBounds.size));
             
-            // Calculate the maximum extent the object might need when rotating
-            var maxRotationExtent = objectBounds.size.magnitude * 0.5f;
+            foreach (var otherBounds in _otherPartBounds)
+            {
+                workspaceBounds.Encapsulate(otherBounds);
+            }
             
-            // Add the rotation extent to the bounds
-            var bufferSize = Vector3.one * maxRotationExtent * 2f;
-            workspaceBounds.Encapsulate(new Bounds(workspaceBounds.center, workspaceBounds.size + bufferSize));
-            
-            // Apply the buffer
-            workspaceBounds.Expand(workspaceBounds.size * _workspaceBoundsBuffer);
+            // Apply a buffer
+            workspaceBounds.Expand(_partBounds.size);
+            workspaceBounds.Expand(workspaceBounds.size * _workspaceBoundsBufferPercentage);
 
             return workspaceBounds;
         }
@@ -125,7 +123,7 @@ namespace PhysicsDisassembly.RRTConnect
                 : nearest.Rotation;
 
             // Check for collision
-            if (HasCollision(newPos, newRot))
+            if (HasCollision(newPos))
             {
                 return null;
             }
@@ -150,7 +148,7 @@ namespace PhysicsDisassembly.RRTConnect
                     ? Quaternion.RotateTowards(current.Rotation, nearestTarget.Rotation, _rotationStepSize)
                     : current.Rotation;
 
-                if (HasCollision(newPos, newRot))
+                if (HasCollision(newPos))
                 {
                     return false;
                 }
@@ -189,7 +187,7 @@ namespace PhysicsDisassembly.RRTConnect
         private Path ReconstructPath(Node meetingPointStart, List<Node> connectionPath)
         {
             var path = new Path(_partId, _partObject);
-            var partPivotOffset = _partObject.transform.position - _partBounds.center;
+            var partPivotOffset = _partObject.position - _partBounds.center;
             
             // Add path from start to meeting point
             var startPath = new List<Node>();
@@ -245,8 +243,6 @@ namespace PhysicsDisassembly.RRTConnect
         // the one that's furthest from its nearest neighbor in the tree
         private Vector3 GetRandomConfigWithVoronoiBias(List<Node> tree)
         {
-            var candidates = new List<SamplingCandidate>(_randomPointAttempts);
-            
             SamplingCandidate bestValidCandidate = null;
             SamplingCandidate bestOverallCandidate = null;
             var maxValidDistance = float.MinValue;
@@ -265,7 +261,6 @@ namespace PhysicsDisassembly.RRTConnect
                 var canReachPoint = IsValidMovement(nearest.Position, randomPoint);
                 
                 var candidate = new SamplingCandidate(randomPoint, distance, nearest, canReachPoint);
-                candidates.Add(candidate);
                 
                 // Update best valid candidate
                 if (canReachPoint && distance > maxValidDistance)
@@ -281,8 +276,6 @@ namespace PhysicsDisassembly.RRTConnect
                     bestOverallCandidate = candidate;
                 }
             }
-
-            //Debug.DrawLine(bestNode.Position, bestPoint, c ? Color.yellow : Color.red, 120f);
             
             // Probabilistically choose between exploration and exploitation
             if (Random.value < _explorationBias)
@@ -320,7 +313,7 @@ namespace PhysicsDisassembly.RRTConnect
             var minProgress = _stepSize * 0.1f; // 10% of step size
             var minimalStep = fromPosition + direction * minProgress;
 
-            if (HasCollision(minimalStep, Quaternion.identity))
+            if (HasCollision(minimalStep))
             {
                 return false;
             }
@@ -334,7 +327,7 @@ namespace PhysicsDisassembly.RRTConnect
                 for (var i = 1; i <= checks; i++)
                 {
                     var checkPoint = fromPosition + direction * (checkStepSize * i);
-                    if (HasCollision(checkPoint, Quaternion.identity))
+                    if (HasCollision(checkPoint))
                     {
                         return false;
                     }
@@ -378,12 +371,41 @@ namespace PhysicsDisassembly.RRTConnect
             return startPoint + direction * _stepSize * 0.5f;
         }
 
-        private bool HasCollision(Vector3 position, Quaternion rotation)
+        private bool HasCollision(Vector3 position)
         {
-            // TODO: Should use OBB instead
-            
             var updatedBounds = new Bounds(position, _partBounds.size);
             return _otherPartBounds.Any(pb => updatedBounds.Intersects(pb));
+        }
+        
+        private Bounds GetPartBounds(Transform part, State state, bool addRotationBuffer)
+        {
+            var bounds = part.GetComponentInChildren<Renderer>().bounds;
+
+            if (addRotationBuffer)
+            {
+                var maxSize = GetBoundsLargestAxisSize(bounds);
+                bounds.size = Vector3.one * maxSize;
+            }
+            
+            bounds.center = state.Position;
+
+            return bounds;
+        }
+        
+        private Bounds[] GetPartBounds(Transform[] parts, State[] states, bool addRotationBuffer)
+        {
+            var bounds = new Bounds[parts.Length];
+            for (var i = 0; i < parts.Length; i++)
+            {
+                bounds[i] = GetPartBounds(parts[i], states[i], addRotationBuffer);
+            }
+            
+            return bounds;
+        }
+
+        private float GetBoundsLargestAxisSize(Bounds bounds)
+        {
+            return Mathf.Max(bounds.size.x, Mathf.Max(bounds.size.y, bounds.size.z));
         }
     }
 }

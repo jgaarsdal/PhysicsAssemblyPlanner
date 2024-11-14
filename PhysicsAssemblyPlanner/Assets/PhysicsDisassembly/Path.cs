@@ -6,11 +6,11 @@ namespace PhysicsDisassembly
     public class Path
     {
         public string PartID { get; private set; }
-        public GameObject PartObject { get; set; }
+        public Transform PartObject { get; set; }
         public List<Vector3> Positions { get; set; }
         public List<Quaternion> Orientations { get; set; }
 
-        public Path(string partID, GameObject partObject)
+        public Path(string partID, Transform partObject)
         {
             PartID = partID;
             PartObject = partObject;

@@ -8,11 +8,11 @@ namespace PhysicsDisassembly
 {
     public class ProgressiveQueueSequencePlanner
     {
-        public Dictionary<string, GameObject> PartObjects => _partObjects;
+        public Dictionary<string, Transform> PartObjects => _partObjects;
         public Dictionary<string, SignedDistanceField> PartSDFs => _partSDFs;
         
         private List<string> _partIds = new List<string>();
-        private Dictionary<string, GameObject> _partObjects = new Dictionary<string, GameObject>();
+        private Dictionary<string, Transform> _partObjects = new Dictionary<string, Transform>();
         private Dictionary<string, SignedDistanceField> _partSDFs = new Dictionary<string, SignedDistanceField>();
         private AssemblyPlanningConfiguration _configuration;
         
@@ -24,12 +24,12 @@ namespace PhysicsDisassembly
         
         private const int _maxAttemptsPerPart = 10;
         
-        public ProgressiveQueueSequencePlanner(GameObject assemblyRoot, AssemblyPlanningConfiguration configuration)
+        public ProgressiveQueueSequencePlanner(Transform assemblyRoot, AssemblyPlanningConfiguration configuration)
         {
             _configuration = configuration;
             
             var assemblyParts = assemblyRoot.GetComponentsInChildren<MeshFilter>()
-                .Select(mf => GetAssemblyPartRootRecursive(assemblyRoot.transform, mf.transform).gameObject)
+                .Select(mf => GetAssemblyPartRootRecursive(assemblyRoot, mf.transform))
                 .ToArray();
             
             for (var i = 0; i < assemblyParts.Length; i++)
@@ -211,7 +211,7 @@ namespace PhysicsDisassembly
                 Debug.Log($"Attempt #{_attemptsPerPart[moveId]} for part {moveId}");
             }
 
-            var currentPartObjects = new Dictionary<string, GameObject>() { { moveId, _partObjects[moveId] } };
+            var currentPartObjects = new Dictionary<string, Transform>() { { moveId, _partObjects[moveId] } };
             var currentPartSDFs = new Dictionary<string, SignedDistanceField>() { { moveId, _partSDFs[moveId] } };
 
             foreach (var partId in stillIds)

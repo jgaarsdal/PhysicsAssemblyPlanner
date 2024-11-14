@@ -6,8 +6,8 @@ namespace PhysicsDisassembly.SDF
 {
     public class SDFCollisionTester : MonoBehaviour
     {
-        [SerializeField] private GameObject _partA = default;
-        [SerializeField] private GameObject _partB = default;
+        [SerializeField] private Transform _partA = default;
+        [SerializeField] private Transform _partB = default;
         [Space] [SerializeField] private float _sdfDefaultCellSize = 0.05f;
         [SerializeField] private float _sdfBoxPadding = 0.1f;
         [SerializeField] private float _collisionPenetrationThreshold = 0f;

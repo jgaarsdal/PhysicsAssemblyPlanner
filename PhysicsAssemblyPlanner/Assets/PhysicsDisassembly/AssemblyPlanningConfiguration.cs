@@ -49,6 +49,6 @@ namespace PhysicsDisassembly
         public float RRTConnectDistance { get; set; }
         public int RRTRandomPointAttempts { get; set; }
         public float RRTExplorationBias { get; set; } // 0 = pure exploitation, 1 = pure exploration
-        public float RRTWorkspaceBoundsBuffer { get; set; }
+        public float RRTWorkspaceBoundsBufferPercentage { get; set; }
     }
 }

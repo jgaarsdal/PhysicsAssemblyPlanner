@@ -9,7 +9,7 @@ namespace PhysicsDisassembly
     public class TestAssemblyPlanner : MonoBehaviour
     {
         [Header("Assembly Planning Settings")] [SerializeField]
-        private GameObject _assemblyRoot = default;
+        private Transform _assemblyRoot = default;
 
         [SerializeField] private bool _useRotation = false;
         [SerializeField] private float _assemblyTimeoutSecs = 600f;
@@ -137,7 +137,7 @@ namespace PhysicsDisassembly
 
             for (var i = 0; i < _disassemblySequence.Count; i++)
             {
-                var sequenceTransform = _disassemblySequence[i].PartObject.transform;
+                var sequenceTransform = _disassemblySequence[i].PartObject;
                 var positions = _disassemblySequence[i].Positions;
                 var rotations = _disassemblySequence[i].Orientations;
 
@@ -177,8 +177,8 @@ namespace PhysicsDisassembly
 
             foreach (var disassembly in _disassemblySequence)
             {
-                disassembly.PartObject.transform.position = disassembly.Positions[0];
-                disassembly.PartObject.transform.rotation = disassembly.Orientations[0];
+                disassembly.PartObject.position = disassembly.Positions[0];
+                disassembly.PartObject.rotation = disassembly.Orientations[0];
             }
         }
 

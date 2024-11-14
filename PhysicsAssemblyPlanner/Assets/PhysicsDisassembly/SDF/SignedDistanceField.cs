@@ -45,13 +45,13 @@ namespace PhysicsDisassembly.SDF
         private ComputeBuffer _trianglesBuffer;
         private readonly ComputeShader _computeShader;
 
-        public SignedDistanceField(GameObject gameObj, SDFCollisionConfiguration configuration)
-        : this(gameObj, configuration.SDFDefaultCellSize, configuration.SDFBoxPadding, /*configuration.SDFCollisionPenetrationThreshold,*/ configuration.SDFUseGPU)
+        public SignedDistanceField(Transform objTransform, SDFCollisionConfiguration configuration)
+        : this(objTransform, configuration.SDFDefaultCellSize, configuration.SDFBoxPadding, /*configuration.SDFCollisionPenetrationThreshold,*/ configuration.SDFUseGPU)
         { }
         
-        public SignedDistanceField(GameObject gameObj, float defaultCellSize = 0.05f, float boundingBoxPadding = 0.1f, /*float collisionPenetrationThreshold = 0.01f,*/ bool useGPU = true)
+        public SignedDistanceField(Transform objTransform, float defaultCellSize = 0.05f, float boundingBoxPadding = 0.1f, /*float collisionPenetrationThreshold = 0.01f,*/ bool useGPU = true)
         {
-            _objectTransform = gameObj.transform;
+            _objectTransform = objTransform;
             _objectMeshes = _objectTransform.GetComponentsInChildren<MeshFilter>();
             _defaultCellSize = defaultCellSize;
             _boundingBoxPadding = boundingBoxPadding;

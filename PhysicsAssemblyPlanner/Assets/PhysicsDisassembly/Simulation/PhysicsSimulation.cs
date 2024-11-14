@@ -13,7 +13,7 @@ namespace PhysicsDisassembly.Simulation
         private PhysicsSimulationConfiguration _configuration;
         private bool _useRotation;
 
-        public PhysicsSimulation(Dictionary<string, GameObject> partObjects, Dictionary<string, SignedDistanceField> partSDFs, 
+        public PhysicsSimulation(Dictionary<string, Transform> partObjects, Dictionary<string, SignedDistanceField> partSDFs, 
             bool useRotation, PhysicsSimulationConfiguration configuration)
         {
             _configuration = configuration;
@@ -23,10 +23,9 @@ namespace PhysicsDisassembly.Simulation
             {
                 var partId = kvp.Key;
                 var partObject = kvp.Value;
-                var partTransform = partObject.transform;
 
-                _parts[partId] = new Part(partObject.GetComponentInChildren<MeshFilter>().sharedMesh, partTransform.position,
-                    partTransform.rotation, partTransform.localScale, configuration);
+                _parts[partId] = new Part(partObject.GetComponentInChildren<MeshFilter>().sharedMesh, partObject.position,
+                    partObject.rotation, partObject.localScale, configuration);
 
                 if (partSDFs != null && partSDFs.TryGetValue(partId, out var partSDF))
                 {
