@@ -4,19 +4,12 @@ using UnityEngine;
 
 namespace PhysicsDisassembly.RRTConnect
 {
-    public class RRTConnect
+    public class RRTConnectPlanner
     {
-        private readonly bool _useRotation = false;
-        private readonly float _stepSize = 0.1f;
-        private readonly float _rotationStepSize = 15f; // degrees
-        private readonly int _maxIterations = 10000;
-        private readonly float _connectDistance = 1.0f;
-        private readonly int _randomPointAttempts = 10; // Number of random samples to test
-        private readonly float _explorationBias = 0.5f;
-        private readonly float _workspaceBoundsBufferPercentage = 0.5f;
         private readonly string _partId;
         private readonly Transform _partObject;
         private readonly Transform[] _otherObjects;
+        private readonly RRTConfiguration _configuration;
         
         private List<Node> _treeStart = new List<Node>();
         private List<Node> _treeGoal = new List<Node>();
@@ -25,20 +18,12 @@ namespace PhysicsDisassembly.RRTConnect
         private Bounds _workspaceBounds;
         private bool _treesAreSwapped = false;
 
-        public RRTConnect(string partId, Transform partObject, Transform[] otherObjects, RRTConfiguration configuration)
+        public RRTConnectPlanner(string partId, Transform partObject, Transform[] otherObjects, RRTConfiguration configuration)
         {
             _partId = partId;
             _partObject = partObject;
             _otherObjects = otherObjects;
-
-            _useRotation = configuration.RRTUseRotation;
-            _stepSize = configuration.RRTStepSize;
-            _rotationStepSize = configuration.RRTRotationStepSize;
-            _maxIterations = configuration.RRTMaxIterations;
-            _connectDistance = configuration.RRTConnectDistance;
-            _randomPointAttempts = configuration.RRTRandomPointAttempts;
-            _explorationBias = configuration.RRTExplorationBias;
-            _workspaceBoundsBufferPercentage = configuration.RRTWorkspaceBoundsBufferPercentage;
+            _configuration = configuration;
         }
         
         public Path PlanPath(State startState, State goalState, State[] otherPartStates, int randomSeed)
@@ -65,11 +50,11 @@ namespace PhysicsDisassembly.RRTConnect
             
             _workspaceBounds = GetWorkspaceBounds(startState, goalState);
             
-            for (var i = 0; i < _maxIterations; i++)
+            for (var i = 0; i < _configuration.RRTMaxIterations; i++)
             {
                 // Get random configuration with Voronoi bias
                 var randomPos = GetRandomConfigWithVoronoiBias(_treeStart);
-                var randomRot = _useRotation ? Random.rotation : Quaternion.identity;
+                var randomRot = _configuration.RRTUseRotation ? Random.rotation : Quaternion.identity;
 
                 var newNode = GrowTree(_treeStart, randomPos, randomRot);
                 if (newNode != null)
@@ -77,7 +62,7 @@ namespace PhysicsDisassembly.RRTConnect
                     // Try to connect to goal tree
                     if (TryConnect(newNode, out List<Node> connectionPath))
                     {
-                        Debug.Log($"RRTConnect: Succeeded in finding a path within {i + 1}/{_maxIterations} iterations");
+                        Debug.Log($"RRTConnect: Succeeded in finding a path within {i + 1}/{_configuration.RRTMaxIterations} iterations");
                         
                         // Path found - Reconstruct the complete path
                         return ReconstructPath(newNode, connectionPath);
@@ -88,7 +73,7 @@ namespace PhysicsDisassembly.RRTConnect
                 SwapTrees();
             }
 
-            Debug.Log($"RRTConnect: Failed to find a path within {_maxIterations} iterations");
+            Debug.Log($"RRTConnect: Failed to find a path within {_configuration.RRTMaxIterations} iterations");
             return null;
         }
         
@@ -104,7 +89,7 @@ namespace PhysicsDisassembly.RRTConnect
             
             // Apply a buffer
             workspaceBounds.Expand(_partBounds.size);
-            workspaceBounds.Expand(workspaceBounds.size * _workspaceBoundsBufferPercentage);
+            workspaceBounds.Expand(workspaceBounds.size * _configuration.RRTWorkspaceBoundsBufferPercentage);
 
             return workspaceBounds;
         }
@@ -115,11 +100,11 @@ namespace PhysicsDisassembly.RRTConnect
 
             // Calculate step direction
             var direction = (targetPos - nearest.Position).normalized;
-            var newPos = nearest.Position + direction * _stepSize;
+            var newPos = nearest.Position + direction * _configuration.RRTStepSize;
 
             // Interpolate rotation
-            var newRot = _useRotation
-                ? Quaternion.RotateTowards(nearest.Rotation, targetRot, _rotationStepSize)
+            var newRot = _configuration.RRTUseRotation
+                ? Quaternion.RotateTowards(nearest.Rotation, targetRot, _configuration.RRTRotationStepSize)
                 : nearest.Rotation;
 
             // Check for collision
@@ -143,9 +128,9 @@ namespace PhysicsDisassembly.RRTConnect
             while (true)
             {
                 var direction = (nearestTarget.Position - current.Position).normalized;
-                var newPos = current.Position + direction * _stepSize;
-                var newRot = _useRotation 
-                    ? Quaternion.RotateTowards(current.Rotation, nearestTarget.Rotation, _rotationStepSize)
+                var newPos = current.Position + direction * _configuration.RRTStepSize;
+                var newRot = _configuration.RRTUseRotation 
+                    ? Quaternion.RotateTowards(current.Rotation, nearestTarget.Rotation, _configuration.RRTRotationStepSize)
                     : current.Rotation;
 
                 if (HasCollision(newPos))
@@ -156,8 +141,8 @@ namespace PhysicsDisassembly.RRTConnect
                 var newNode = new Node(newPos, newRot, current);
                 connectionPath.Add(newNode);
 
-                if (Vector3.Distance(newPos, nearestTarget.Position) < _connectDistance &&
-                    Quaternion.Angle(newRot, nearestTarget.Rotation) < _rotationStepSize)
+                if (Vector3.Distance(newPos, nearestTarget.Position) < _configuration.RRTConnectDistance &&
+                    Quaternion.Angle(newRot, nearestTarget.Rotation) < _configuration.RRTRotationStepSize)
                 {
                     return true;
                 }
@@ -248,7 +233,7 @@ namespace PhysicsDisassembly.RRTConnect
             var maxValidDistance = float.MinValue;
             var maxOverallDistance = float.MinValue;
 
-            for (var i = 0; i < _randomPointAttempts; i++)
+            for (var i = 0; i < _configuration.RRTRandomPointAttempts; i++)
             {
                 var randomPoint = new Vector3(
                     Random.Range(_workspaceBounds.min.x, _workspaceBounds.max.x),
@@ -278,7 +263,7 @@ namespace PhysicsDisassembly.RRTConnect
             }
             
             // Probabilistically choose between exploration and exploitation
-            if (Random.value < _explorationBias)
+            if (Random.value < _configuration.RRTExplorationBias)
             {
                 // Exploration: Try to use the overall best candidate
                 if (bestOverallCandidate != null)
@@ -310,7 +295,7 @@ namespace PhysicsDisassembly.RRTConnect
             direction.Normalize();
 
             // Check if we can move at least a minimal distance toward the target
-            var minProgress = _stepSize * 0.1f; // 10% of step size
+            var minProgress = _configuration.RRTStepSize * 0.1f; // 10% of step size
             var minimalStep = fromPosition + direction * minProgress;
 
             if (HasCollision(minimalStep))
@@ -319,9 +304,9 @@ namespace PhysicsDisassembly.RRTConnect
             }
 
             // Do a more detailed check if trying to move further
-            if (distance > _stepSize)
+            if (distance > _configuration.RRTStepSize)
             {
-                var checks = Mathf.CeilToInt(distance / _stepSize);
+                var checks = Mathf.CeilToInt(distance / _configuration.RRTStepSize);
                 var checkStepSize = distance / checks;
 
                 for (var i = 1; i <= checks; i++)
@@ -346,7 +331,7 @@ namespace PhysicsDisassembly.RRTConnect
             var directionToGoal = (goalPosition - nearest.Position).normalized;
         
             // Add some randomness to avoid getting stuck
-            var randomOffset = Random.insideUnitSphere * _stepSize;
+            var randomOffset = Random.insideUnitSphere * _configuration.RRTStepSize;
             var direction = (directionToGoal + randomOffset.normalized * 0.5f).normalized;
         
             return FindBestValidPoint(nearest.Position, direction);
@@ -354,8 +339,8 @@ namespace PhysicsDisassembly.RRTConnect
 
         private Vector3 FindBestValidPoint(Vector3 startPoint, Vector3 direction)
         {
-            var maxDistance = _stepSize * 2f; // Try up to 2x step size
-            var currentDistance = _stepSize;
+            var maxDistance = _configuration.RRTStepSize * 2f; // Try up to 2x step size
+            var currentDistance = _configuration.RRTStepSize;
 
             while (currentDistance <= maxDistance)
             {
@@ -364,11 +349,11 @@ namespace PhysicsDisassembly.RRTConnect
                 {
                     return testPoint;
                 }
-                currentDistance += _stepSize * 0.5f;
+                currentDistance += _configuration.RRTStepSize * 0.5f;
             }
 
             // If no valid point found, return a small step in the desired direction
-            return startPoint + direction * _stepSize * 0.5f;
+            return startPoint + direction * _configuration.RRTStepSize * 0.5f;
         }
 
         private bool HasCollision(Vector3 position)

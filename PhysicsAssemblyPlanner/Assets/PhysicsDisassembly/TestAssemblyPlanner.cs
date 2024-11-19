@@ -1,60 +1,14 @@
-using System;
 using System.Collections.Generic;
 using DG.Tweening;
-using PhysicsDisassembly.Simulation;
 using UnityEngine;
 
 namespace PhysicsDisassembly
 {
+    [RequireComponent(typeof(AssemblyPlanner))]
     public class TestAssemblyPlanner : MonoBehaviour
     {
-        [Header("Assembly Planning Settings")] [SerializeField]
-        private Transform _assemblyRoot = default;
-
-        [SerializeField] private bool _useRotation = false;
-        [SerializeField] private float _assemblyTimeoutSecs = 600f;
-        [SerializeField] private float _partTimeoutSecs = 30f;
-        [SerializeField] private bool _useRandomSeed = true;
-        [SerializeField] private int _fixedSeed = 896;
-        [SerializeField] private bool _verbose = true;
-
-        [Header("BFSPlanner Settings")] [SerializeField]
-        private float _bfsStatePositionThreshold = 0.05f;
-
-        [SerializeField] private float _bfsStateAngleThreshold = 0.5f;
-
-        [Header("Physics Simulation Settings")] [SerializeField]
-        private float _simulationForce = 5f;
-
-        [SerializeField] private float _simulationTorque = 1f;
-        [SerializeField] private float _simulationTimeStep = 0.0005f;
-        [SerializeField] private int _simulationFrameSkip = 90;
-        [SerializeField] private float _simulationContactStiffness = 15f;
-        [SerializeField] private float _simulationContactDamping = 0f;
-        [SerializeField] private float _simulationMaxVelocity = 0.01f;
-        [SerializeField] private float _simulationMaxAngularVelocity = 0.01f;
-        [SerializeField] private int _simulationContactPointCount = 1024;
-        [SerializeField] private float _simulationCollisionThreshold = 0f;
-
-        [Header("SDF Collision Settings")] [SerializeField]
-        private float _sdfDefaultCellSize = 0.05f;
-
-        [SerializeField] private float _sdfBoxPadding = 0.1f;
-        [SerializeField] private bool _useGPU = true;
-
-        [Header("RRT-Connect Settings")] [SerializeField]
-        private float _rrtStepSize = 0.1f;
-
-        [SerializeField] private float _rrtRotationStepSize = 15f; // degrees
-        [SerializeField] private int _rrtMaxIterations = 10000;
-        [SerializeField] private float _rrtConnectDistance = 1.0f;
-        [SerializeField] private int _rrtRandomPointAttempts = 10;
-
-        [Header("Path Simplifier Settings")] 
-        [SerializeField] private float _minimumProgressThreshold = 0.1f;
-        [SerializeField] private int _transitionTestSteps = 10;
-
-        private ProgressiveQueueSequencePlanner _assemblyPlanner;
+        [SerializeField] private AssemblyPart[] _assemblyParts = default;
+        
         private Sequence _disassemblyTweenSequence;
         private List<Path> _disassemblySequence;
 
@@ -66,70 +20,8 @@ namespace PhysicsDisassembly
         [ContextMenu("Run Planner")]
         public async void RunAssemblyPlannerButton()
         {
-            var configuration = new AssemblyPlanningConfiguration()
-            {
-                DisassemblyUseRotation = _useRotation,
-                BFSPlannerConfiguration = new BFSPlannerConfiguration()
-                {
-                    BFSStatePositionThreshold = _bfsStatePositionThreshold,
-                    BFSStateAngleThreshold = _bfsStateAngleThreshold
-                },
-                AssemblyTimeoutSecs = _assemblyTimeoutSecs,
-                PartTimeoutSecs = _partTimeoutSecs,
-                PhysicsSimulationConfiguration = new PhysicsSimulationConfiguration()
-                {
-                    SimulationForce = _simulationForce,
-                    SimulationTorque = _simulationTorque,
-                    SimulationTimeStep = _simulationTimeStep,
-                    SimulationFrameSkip = _simulationFrameSkip,
-                    SimulationContactStiffness = _simulationContactStiffness,
-                    SimulationContactDamping = _simulationContactDamping,
-                    SimulationMaxVelocity = _simulationMaxVelocity,
-                    SimulationMaxAngularVelocity = _simulationMaxAngularVelocity,
-                    SimulationContactPointCount = _simulationContactPointCount,
-                    SimulationCollisionThreshold = _simulationCollisionThreshold
-                },
-                SDFCollisionConfiguration = new SDFCollisionConfiguration()
-                {
-                    SDFDefaultCellSize = _sdfDefaultCellSize,
-                    SDFBoxPadding = _sdfBoxPadding,
-                    SDFUseGPU = _useGPU
-                },
-                RRTConfiguration = new RRTConfiguration()
-                {
-                    RRTStepSize = _rrtStepSize,
-                    RRTRotationStepSize = _rrtRotationStepSize,
-                    RRTMaxIterations = _rrtMaxIterations,
-                    RRTConnectDistance = _rrtConnectDistance,
-                    RRTRandomPointAttempts = _rrtRandomPointAttempts
-                },
-                Verbose = _verbose
-            };
-
-            _assemblyPlanner = new ProgressiveQueueSequencePlanner(_assemblyRoot, configuration);
-            await _assemblyPlanner.InitializeSignedDistanceFields();
-
-            var randomSeed = _useRandomSeed ? DateTime.Now.Millisecond : _fixedSeed;
-            var (status, sequence, seqCount, totalDuration) = _assemblyPlanner.PlanSequence(randomSeed);
-
-            Debug.Log($"Finished planning with status '{status}' and random seed '{randomSeed}'");
-
-            var physicsSimulation = new PhysicsSimulation(_assemblyPlanner.PartObjects, _assemblyPlanner.PartSDFs,
-                _useRotation, configuration.PhysicsSimulationConfiguration);
-            var simplifiedSequence = new List<Path>();
-            foreach (var partPath in sequence)
-            {
-                var pathSimplifier = new PathSimplifier(physicsSimulation, partPath.PartID, 
-                    _minimumProgressThreshold, _transitionTestSteps, _verbose);
-                var simplifiedPath = pathSimplifier.SimplifyPath(partPath, _useRotation, true);
-
-                simplifiedSequence.Add(simplifiedPath);
-
-                Debug.Log(
-                    $"Finished simplifying part '{partPath.PartID}' from {partPath.Positions.Count} states to {simplifiedPath.Positions.Count} states");
-            }
-
-            _disassemblySequence = simplifiedSequence;
+            var assemblyPlanner = this.GetComponent<AssemblyPlanner>();
+            _disassemblySequence = await assemblyPlanner.RunPlanner(_assemblyParts);
 
             ClearTweens();
 

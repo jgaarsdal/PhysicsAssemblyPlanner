@@ -24,20 +24,16 @@ namespace PhysicsDisassembly
         
         private const int _maxAttemptsPerPart = 10;
         
-        public ProgressiveQueueSequencePlanner(Transform assemblyRoot, AssemblyPlanningConfiguration configuration)
+        public ProgressiveQueueSequencePlanner(AssemblyPart[] parts, AssemblyPlanningConfiguration configuration)
         {
             _configuration = configuration;
             
-            var assemblyParts = assemblyRoot.GetComponentsInChildren<MeshFilter>()
-                .Select(mf => GetAssemblyPartRootRecursive(assemblyRoot, mf.transform))
-                .ToArray();
-            
-            for (var i = 0; i < assemblyParts.Length; i++)
+            for (var i = 0; i < parts.Length; i++)
             {
                 var id = i.ToString();
                 _partIds.Add(id);
-                _partObjects.Add(id, assemblyParts[i]);
-                _partSDFs.Add(id, new SignedDistanceField(assemblyParts[i], _configuration.SDFCollisionConfiguration));
+                _partObjects.Add(id, parts[i].PartObject);
+                _partSDFs.Add(id, new SignedDistanceField(parts[i].PartObject, _configuration.SDFCollisionConfiguration));
             }
         }
 

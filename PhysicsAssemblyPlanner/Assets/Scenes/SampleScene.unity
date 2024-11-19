@@ -129,6 +129,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7235804}
   - component: {fileID: 7235803}
+  - component: {fileID: 7235805}
   m_Layer: 0
   m_Name: CollisionTest (2)
   m_TagString: Untagged
@@ -148,35 +149,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed8e1017fae339a458d70ef35ae7d64f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _assemblyRoot: {fileID: 7235804}
-  _useRotation: 0
-  _assemblyTimeoutSecs: 20
-  _partTimeoutSecs: 10
-  _useRandomSeed: 1
-  _fixedSeed: 44
-  _verbose: 1
-  _bfsStatePositionThreshold: 0.21
-  _bfsStateAngleThreshold: 0.5
-  _simulationForce: 10
-  _simulationTorque: 200
-  _simulationTimeStep: 0.0005
-  _simulationFrameSkip: 90
-  _simulationContactStiffness: 20
-  _simulationContactDamping: 1
-  _simulationMaxVelocity: 0.0025
-  _simulationMaxAngularVelocity: 0.05
-  _simulationContactPointCount: 1024
-  _simulationCollisionThreshold: -0.03
-  _sdfDefaultCellSize: 0.05
-  _sdfBoxPadding: 0.1
-  _useGPU: 1
-  _rrtStepSize: 0.1
-  _rrtRotationStepSize: 15
-  _rrtMaxIterations: 10000
-  _rrtConnectDistance: 1
-  _rrtRandomPointAttempts: 10
-  _minimumProgressThreshold: 0.1
-  _transitionTestSteps: 10
+  _assemblyParts: []
 --- !u!4 &7235804
 Transform:
   m_ObjectHideFlags: 0
@@ -194,6 +167,51 @@ Transform:
   - {fileID: 2090722146}
   m_Father: {fileID: 1569423311}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7235805
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7235802}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a33c4346be1bd04e869b68f38e77ded, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _useRotation: 0
+  _useRRTConnect: 1
+  _usePathSimplifier: 1
+  _assemblyTimeoutSecs: 600
+  _partTimeoutSecs: 450
+  _useRandomSeed: 1
+  _fixedSeed: 896
+  _verbose: 1
+  _bfsStatePositionThreshold: 0.21
+  _bfsStateAngleThreshold: 0.5
+  _simulationForce: 10
+  _simulationTorque: 200
+  _simulationTimeStep: 0.0005
+  _simulationFrameSkip: 90
+  _simulationContactStiffness: 20
+  _simulationContactDamping: 1
+  _simulationMaxVelocity: 0.0025
+  _simulationMaxAngularVelocity: 0.05
+  _simulationContactPointCount: 1024
+  _simulationCollisionThreshold: -0.03
+  _sdfDefaultCellSize: 0.05
+  _sdfBoxPadding: 0.1
+  _useGPU: 1
+  _rrtUseRotation: 1
+  _rrtStepSize: 0.5
+  _rrtRotationStepSize: 5
+  _rrtMaxIterations: 10000
+  _rrtConnectDistance: 1
+  _rrtRandomPointAttempts: 10
+  _rrtWorkspaceBoundsBufferPercentage: 0.5
+  _rrtExplorationBias: 0.5
+  _minimumProgressThreshold: 0.1
+  _transitionTestSteps: 10
 --- !u!4 &42323971 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 760a508d568b2994fb54e44d0ef63e1d,
@@ -258,6 +276,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -7635826562936255635, guid: 0c6b7aba16113844db14a14e35006597,
+        type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: e147ddfca55dfd9479e330ce59a950cf, type: 2}
     - target: {fileID: 919132149155446097, guid: 0c6b7aba16113844db14a14e35006597,
         type: 3}
       propertyPath: m_Name
@@ -284,6 +307,7 @@ GameObject:
   m_Component:
   - component: {fileID: 89689200}
   - component: {fileID: 89689199}
+  - component: {fileID: 89689201}
   m_Layer: 0
   m_Name: CollisionTest (8)
   m_TagString: Untagged
@@ -303,35 +327,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed8e1017fae339a458d70ef35ae7d64f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _assemblyRoot: {fileID: 89689198}
-  _useRotation: 0
-  _assemblyTimeoutSecs: 20
-  _partTimeoutSecs: 10
-  _useRandomSeed: 1
-  _fixedSeed: 44
-  _verbose: 1
-  _bfsStatePositionThreshold: 0.21
-  _bfsStateAngleThreshold: 0.5
-  _simulationForce: 10
-  _simulationTorque: 200
-  _simulationTimeStep: 0.0005
-  _simulationFrameSkip: 90
-  _simulationContactStiffness: 20
-  _simulationContactDamping: 1
-  _simulationMaxVelocity: 0.0025
-  _simulationMaxAngularVelocity: 0.05
-  _simulationContactPointCount: 1024
-  _simulationCollisionThreshold: -0.03
-  _sdfDefaultCellSize: 0.05
-  _sdfBoxPadding: 0.1
-  _useGPU: 1
-  _rrtStepSize: 0.1
-  _rrtRotationStepSize: 15
-  _rrtMaxIterations: 10000
-  _rrtConnectDistance: 1
-  _rrtRandomPointAttempts: 10
-  _minimumProgressThreshold: 0.1
-  _transitionTestSteps: 10
+  _assemblyParts: []
 --- !u!4 &89689200
 Transform:
   m_ObjectHideFlags: 0
@@ -350,6 +346,51 @@ Transform:
   - {fileID: 1097374143}
   m_Father: {fileID: 1935904653}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &89689201
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 89689198}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a33c4346be1bd04e869b68f38e77ded, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _useRotation: 0
+  _useRRTConnect: 1
+  _usePathSimplifier: 1
+  _assemblyTimeoutSecs: 600
+  _partTimeoutSecs: 450
+  _useRandomSeed: 1
+  _fixedSeed: 896
+  _verbose: 1
+  _bfsStatePositionThreshold: 0.21
+  _bfsStateAngleThreshold: 0.5
+  _simulationForce: 10
+  _simulationTorque: 200
+  _simulationTimeStep: 0.0005
+  _simulationFrameSkip: 90
+  _simulationContactStiffness: 20
+  _simulationContactDamping: 1
+  _simulationMaxVelocity: 0.0025
+  _simulationMaxAngularVelocity: 0.05
+  _simulationContactPointCount: 1024
+  _simulationCollisionThreshold: -0.03
+  _sdfDefaultCellSize: 0.05
+  _sdfBoxPadding: 0.1
+  _useGPU: 1
+  _rrtUseRotation: 1
+  _rrtStepSize: 0.5
+  _rrtRotationStepSize: 5
+  _rrtMaxIterations: 10000
+  _rrtConnectDistance: 1
+  _rrtRandomPointAttempts: 10
+  _rrtWorkspaceBoundsBufferPercentage: 0.5
+  _rrtExplorationBias: 0.5
+  _minimumProgressThreshold: 0.1
+  _transitionTestSteps: 10
 --- !u!1 &116875040
 GameObject:
   m_ObjectHideFlags: 0
@@ -956,6 +997,7 @@ GameObject:
   m_Component:
   - component: {fileID: 473839355}
   - component: {fileID: 473839354}
+  - component: {fileID: 473839356}
   m_Layer: 0
   m_Name: Stream_Trap_v1_NEW (1)
   m_TagString: Untagged
@@ -975,35 +1017,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed8e1017fae339a458d70ef35ae7d64f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _assemblyRoot: {fileID: 473839353}
-  _useRotation: 0
-  _assemblyTimeoutSecs: 600
-  _partTimeoutSecs: 60
-  _useRandomSeed: 0
-  _fixedSeed: 0
-  _verbose: 1
-  _bfsStatePositionThreshold: 0.05
-  _bfsStateAngleThreshold: 0.5
-  _simulationForce: 50
-  _simulationTorque: 1
-  _simulationTimeStep: 0.001
-  _simulationFrameSkip: 100
-  _simulationContactStiffness: 1
-  _simulationContactDamping: 0
-  _simulationMaxVelocity: 0.01
-  _simulationMaxAngularVelocity: 0.01
-  _simulationContactPointCount: 1024
-  _simulationCollisionThreshold: 0
-  _sdfDefaultCellSize: 0.05
-  _sdfBoxPadding: 0.1
-  _useGPU: 1
-  _rrtStepSize: 0.1
-  _rrtRotationStepSize: 15
-  _rrtMaxIterations: 10000
-  _rrtConnectDistance: 1
-  _rrtRandomPointAttempts: 10
-  _minimumProgressThreshold: 0.1
-  _transitionTestSteps: 10
+  _assemblyParts: []
 --- !u!4 &473839355
 Transform:
   m_ObjectHideFlags: 0
@@ -1021,6 +1035,51 @@ Transform:
   - {fileID: 2131481672}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &473839356
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 473839353}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a33c4346be1bd04e869b68f38e77ded, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _useRotation: 0
+  _useRRTConnect: 1
+  _usePathSimplifier: 1
+  _assemblyTimeoutSecs: 600
+  _partTimeoutSecs: 450
+  _useRandomSeed: 1
+  _fixedSeed: 896
+  _verbose: 1
+  _bfsStatePositionThreshold: 0.21
+  _bfsStateAngleThreshold: 0.5
+  _simulationForce: 10
+  _simulationTorque: 200
+  _simulationTimeStep: 0.0005
+  _simulationFrameSkip: 90
+  _simulationContactStiffness: 20
+  _simulationContactDamping: 1
+  _simulationMaxVelocity: 0.0025
+  _simulationMaxAngularVelocity: 0.05
+  _simulationContactPointCount: 1024
+  _simulationCollisionThreshold: -0.03
+  _sdfDefaultCellSize: 0.05
+  _sdfBoxPadding: 0.1
+  _useGPU: 1
+  _rrtUseRotation: 1
+  _rrtStepSize: 0.5
+  _rrtRotationStepSize: 5
+  _rrtMaxIterations: 10000
+  _rrtConnectDistance: 1
+  _rrtRandomPointAttempts: 10
+  _rrtWorkspaceBoundsBufferPercentage: 0.5
+  _rrtExplorationBias: 0.5
+  _minimumProgressThreshold: 0.1
+  _transitionTestSteps: 10
 --- !u!1001 &504964541
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1478,6 +1537,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 936974376}
+  - component: {fileID: 936974378}
   - component: {fileID: 936974375}
   - component: {fileID: 936974377}
   m_Layer: 0
@@ -1494,40 +1554,16 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 936974374}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ed8e1017fae339a458d70ef35ae7d64f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _assemblyRoot: {fileID: 936974376}
-  _useRotation: 0
-  _assemblyTimeoutSecs: 20
-  _partTimeoutSecs: 10
-  _useRandomSeed: 1
-  _fixedSeed: 44
-  _verbose: 1
-  _bfsStatePositionThreshold: 0.21
-  _bfsStateAngleThreshold: 0.5
-  _simulationForce: 10
-  _simulationTorque: 200
-  _simulationTimeStep: 0.0005
-  _simulationFrameSkip: 90
-  _simulationContactStiffness: 20
-  _simulationContactDamping: 1
-  _simulationMaxVelocity: 0.0025
-  _simulationMaxAngularVelocity: 0.05
-  _simulationContactPointCount: 1024
-  _simulationCollisionThreshold: -0.03
-  _sdfDefaultCellSize: 0.05
-  _sdfBoxPadding: 0.1
-  _useGPU: 1
-  _rrtStepSize: 0.1
-  _rrtRotationStepSize: 15
-  _rrtMaxIterations: 10000
-  _rrtConnectDistance: 1
-  _rrtRandomPointAttempts: 10
-  _minimumProgressThreshold: 0.1
-  _transitionTestSteps: 10
+  _assemblyParts:
+  - PartObject: {fileID: 594983386}
+    PartFinalState: {fileID: 77002864}
+  - PartObject: {fileID: 1595949030}
+    PartFinalState: {fileID: 2128407948}
 --- !u!4 &936974376
 Transform:
   m_ObjectHideFlags: 0
@@ -1544,6 +1580,7 @@ Transform:
   - {fileID: 594983386}
   - {fileID: 77002864}
   - {fileID: 1595949030}
+  - {fileID: 2128407948}
   m_Father: {fileID: 1569423311}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &936974377
@@ -1553,7 +1590,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 936974374}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4b05ce45669fdbf4a862d7a5c40dfc2f, type: 3}
   m_Name: 
@@ -1571,6 +1608,51 @@ MonoBehaviour:
   _rrtWorkspaceBoundsBufferPercentage: 0.5
   _rrtExplorationBias: 0.5
   _minimumProgressThreshold: 0.01
+  _transitionTestSteps: 10
+--- !u!114 &936974378
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 936974374}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a33c4346be1bd04e869b68f38e77ded, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _useRotation: 0
+  _useRRTConnect: 1
+  _usePathSimplifier: 1
+  _assemblyTimeoutSecs: 1200
+  _partTimeoutSecs: 1000
+  _useRandomSeed: 0
+  _fixedSeed: 224
+  _verbose: 1
+  _bfsStatePositionThreshold: 0.21
+  _bfsStateAngleThreshold: 0.5
+  _simulationForce: 10
+  _simulationTorque: 200
+  _simulationTimeStep: 0.0005
+  _simulationFrameSkip: 90
+  _simulationContactStiffness: 20
+  _simulationContactDamping: 1
+  _simulationMaxVelocity: 0.0025
+  _simulationMaxAngularVelocity: 0.05
+  _simulationContactPointCount: 1024
+  _simulationCollisionThreshold: -0.03
+  _sdfDefaultCellSize: 0.05
+  _sdfBoxPadding: 0.1
+  _useGPU: 1
+  _rrtUseRotation: 1
+  _rrtStepSize: 0.5
+  _rrtRotationStepSize: 5
+  _rrtMaxIterations: 10000
+  _rrtConnectDistance: 1
+  _rrtRandomPointAttempts: 10
+  _rrtWorkspaceBoundsBufferPercentage: 0.5
+  _rrtExplorationBias: 0.5
+  _minimumProgressThreshold: 0.1
   _transitionTestSteps: 10
 --- !u!1001 &942785136
 PrefabInstance:
@@ -1650,6 +1732,7 @@ GameObject:
   m_Component:
   - component: {fileID: 956830380}
   - component: {fileID: 956830379}
+  - component: {fileID: 956830381}
   m_Layer: 0
   m_Name: CollisionTest (4)
   m_TagString: Untagged
@@ -1669,35 +1752,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed8e1017fae339a458d70ef35ae7d64f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _assemblyRoot: {fileID: 956830380}
-  _useRotation: 0
-  _assemblyTimeoutSecs: 20
-  _partTimeoutSecs: 10
-  _useRandomSeed: 1
-  _fixedSeed: 44
-  _verbose: 1
-  _bfsStatePositionThreshold: 0.21
-  _bfsStateAngleThreshold: 0.5
-  _simulationForce: 10
-  _simulationTorque: 200
-  _simulationTimeStep: 0.0005
-  _simulationFrameSkip: 90
-  _simulationContactStiffness: 20
-  _simulationContactDamping: 1
-  _simulationMaxVelocity: 0.0025
-  _simulationMaxAngularVelocity: 0.05
-  _simulationContactPointCount: 1024
-  _simulationCollisionThreshold: -0.03
-  _sdfDefaultCellSize: 0.05
-  _sdfBoxPadding: 0.1
-  _useGPU: 1
-  _rrtStepSize: 0.1
-  _rrtRotationStepSize: 15
-  _rrtMaxIterations: 10000
-  _rrtConnectDistance: 1
-  _rrtRandomPointAttempts: 10
-  _minimumProgressThreshold: 0.1
-  _transitionTestSteps: 10
+  _assemblyParts: []
 --- !u!4 &956830380
 Transform:
   m_ObjectHideFlags: 0
@@ -1715,6 +1770,51 @@ Transform:
   - {fileID: 1509213811}
   m_Father: {fileID: 1569423311}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &956830381
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 956830378}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a33c4346be1bd04e869b68f38e77ded, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _useRotation: 0
+  _useRRTConnect: 1
+  _usePathSimplifier: 1
+  _assemblyTimeoutSecs: 600
+  _partTimeoutSecs: 450
+  _useRandomSeed: 1
+  _fixedSeed: 896
+  _verbose: 1
+  _bfsStatePositionThreshold: 0.21
+  _bfsStateAngleThreshold: 0.5
+  _simulationForce: 10
+  _simulationTorque: 200
+  _simulationTimeStep: 0.0005
+  _simulationFrameSkip: 90
+  _simulationContactStiffness: 20
+  _simulationContactDamping: 1
+  _simulationMaxVelocity: 0.0025
+  _simulationMaxAngularVelocity: 0.05
+  _simulationContactPointCount: 1024
+  _simulationCollisionThreshold: -0.03
+  _sdfDefaultCellSize: 0.05
+  _sdfBoxPadding: 0.1
+  _useGPU: 1
+  _rrtUseRotation: 1
+  _rrtStepSize: 0.5
+  _rrtRotationStepSize: 5
+  _rrtMaxIterations: 10000
+  _rrtConnectDistance: 1
+  _rrtRandomPointAttempts: 10
+  _rrtWorkspaceBoundsBufferPercentage: 0.5
+  _rrtExplorationBias: 0.5
+  _minimumProgressThreshold: 0.1
+  _transitionTestSteps: 10
 --- !u!1001 &973714092
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1793,6 +1893,7 @@ GameObject:
   m_Component:
   - component: {fileID: 974275549}
   - component: {fileID: 974275547}
+  - component: {fileID: 974275550}
   m_Layer: 0
   m_Name: CollisionTest
   m_TagString: Untagged
@@ -1812,35 +1913,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed8e1017fae339a458d70ef35ae7d64f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _assemblyRoot: {fileID: 974275549}
-  _useRotation: 0
-  _assemblyTimeoutSecs: 200
-  _partTimeoutSecs: 170
-  _useRandomSeed: 1
-  _fixedSeed: 44
-  _verbose: 1
-  _bfsStatePositionThreshold: 0.21
-  _bfsStateAngleThreshold: 0.5
-  _simulationForce: 10
-  _simulationTorque: 200
-  _simulationTimeStep: 0.0005
-  _simulationFrameSkip: 90
-  _simulationContactStiffness: 20
-  _simulationContactDamping: 1
-  _simulationMaxVelocity: 0.0025
-  _simulationMaxAngularVelocity: 0.05
-  _simulationContactPointCount: 1024
-  _simulationCollisionThreshold: -0.03
-  _sdfDefaultCellSize: 0.05
-  _sdfBoxPadding: 0.1
-  _useGPU: 1
-  _rrtStepSize: 0.1
-  _rrtRotationStepSize: 15
-  _rrtMaxIterations: 10000
-  _rrtConnectDistance: 1
-  _rrtRandomPointAttempts: 10
-  _minimumProgressThreshold: 0.1
-  _transitionTestSteps: 10
+  _assemblyParts: []
 --- !u!4 &974275549
 Transform:
   m_ObjectHideFlags: 0
@@ -1858,6 +1931,51 @@ Transform:
   - {fileID: 543450652694354123}
   m_Father: {fileID: 1569423311}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &974275550
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 974275546}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a33c4346be1bd04e869b68f38e77ded, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _useRotation: 0
+  _useRRTConnect: 1
+  _usePathSimplifier: 1
+  _assemblyTimeoutSecs: 600
+  _partTimeoutSecs: 450
+  _useRandomSeed: 1
+  _fixedSeed: 896
+  _verbose: 1
+  _bfsStatePositionThreshold: 0.21
+  _bfsStateAngleThreshold: 0.5
+  _simulationForce: 10
+  _simulationTorque: 200
+  _simulationTimeStep: 0.0005
+  _simulationFrameSkip: 90
+  _simulationContactStiffness: 20
+  _simulationContactDamping: 1
+  _simulationMaxVelocity: 0.0025
+  _simulationMaxAngularVelocity: 0.05
+  _simulationContactPointCount: 1024
+  _simulationCollisionThreshold: -0.03
+  _sdfDefaultCellSize: 0.05
+  _sdfBoxPadding: 0.1
+  _useGPU: 1
+  _rrtUseRotation: 1
+  _rrtStepSize: 0.5
+  _rrtRotationStepSize: 5
+  _rrtMaxIterations: 10000
+  _rrtConnectDistance: 1
+  _rrtRandomPointAttempts: 10
+  _rrtWorkspaceBoundsBufferPercentage: 0.5
+  _rrtExplorationBias: 0.5
+  _minimumProgressThreshold: 0.1
+  _transitionTestSteps: 10
 --- !u!1 &1021582442
 GameObject:
   m_ObjectHideFlags: 0
@@ -1868,6 +1986,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1021582444}
   - component: {fileID: 1021582443}
+  - component: {fileID: 1021582445}
   m_Layer: 0
   m_Name: Stream_Trap_v1_NEW
   m_TagString: Untagged
@@ -1887,35 +2006,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed8e1017fae339a458d70ef35ae7d64f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _assemblyRoot: {fileID: 1021582442}
-  _useRotation: 0
-  _assemblyTimeoutSecs: 600
-  _partTimeoutSecs: 60
-  _useRandomSeed: 0
-  _fixedSeed: 0
-  _verbose: 1
-  _bfsStatePositionThreshold: 0.05
-  _bfsStateAngleThreshold: 0.5
-  _simulationForce: 50
-  _simulationTorque: 1
-  _simulationTimeStep: 0.001
-  _simulationFrameSkip: 100
-  _simulationContactStiffness: 1
-  _simulationContactDamping: 0
-  _simulationMaxVelocity: 0.01
-  _simulationMaxAngularVelocity: 0.01
-  _simulationContactPointCount: 1024
-  _simulationCollisionThreshold: 0
-  _sdfDefaultCellSize: 0.05
-  _sdfBoxPadding: 0.1
-  _useGPU: 1
-  _rrtStepSize: 0.1
-  _rrtRotationStepSize: 15
-  _rrtMaxIterations: 10000
-  _rrtConnectDistance: 1
-  _rrtRandomPointAttempts: 10
-  _minimumProgressThreshold: 0.1
-  _transitionTestSteps: 10
+  _assemblyParts: []
 --- !u!4 &1021582444
 Transform:
   m_ObjectHideFlags: 0
@@ -1934,6 +2025,51 @@ Transform:
   - {fileID: 2103662995}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1021582445
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1021582442}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a33c4346be1bd04e869b68f38e77ded, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _useRotation: 0
+  _useRRTConnect: 1
+  _usePathSimplifier: 1
+  _assemblyTimeoutSecs: 600
+  _partTimeoutSecs: 450
+  _useRandomSeed: 1
+  _fixedSeed: 896
+  _verbose: 1
+  _bfsStatePositionThreshold: 0.21
+  _bfsStateAngleThreshold: 0.5
+  _simulationForce: 10
+  _simulationTorque: 200
+  _simulationTimeStep: 0.0005
+  _simulationFrameSkip: 90
+  _simulationContactStiffness: 20
+  _simulationContactDamping: 1
+  _simulationMaxVelocity: 0.0025
+  _simulationMaxAngularVelocity: 0.05
+  _simulationContactPointCount: 1024
+  _simulationCollisionThreshold: -0.03
+  _sdfDefaultCellSize: 0.05
+  _sdfBoxPadding: 0.1
+  _useGPU: 1
+  _rrtUseRotation: 1
+  _rrtStepSize: 0.5
+  _rrtRotationStepSize: 5
+  _rrtMaxIterations: 10000
+  _rrtConnectDistance: 1
+  _rrtRandomPointAttempts: 10
+  _rrtWorkspaceBoundsBufferPercentage: 0.5
+  _rrtExplorationBias: 0.5
+  _minimumProgressThreshold: 0.1
+  _transitionTestSteps: 10
 --- !u!1001 &1042016932
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2092,6 +2228,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1242350216}
   - component: {fileID: 1242350217}
+  - component: {fileID: 1242350218}
   m_Layer: 0
   m_Name: CollisionTest (10)
   m_TagString: Untagged
@@ -2128,12 +2265,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed8e1017fae339a458d70ef35ae7d64f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _assemblyRoot: {fileID: 1242350215}
-  _useRotation: 1
-  _assemblyTimeoutSecs: 3600
-  _partTimeoutSecs: 2600
-  _useRandomSeed: 0
-  _fixedSeed: 31
+  _assemblyParts: []
+--- !u!114 &1242350218
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1242350215}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a33c4346be1bd04e869b68f38e77ded, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _useRotation: 0
+  _useRRTConnect: 1
+  _usePathSimplifier: 1
+  _assemblyTimeoutSecs: 600
+  _partTimeoutSecs: 450
+  _useRandomSeed: 1
+  _fixedSeed: 896
   _verbose: 1
   _bfsStatePositionThreshold: 0.21
   _bfsStateAngleThreshold: 0.5
@@ -2150,11 +2301,14 @@ MonoBehaviour:
   _sdfDefaultCellSize: 0.05
   _sdfBoxPadding: 0.1
   _useGPU: 1
-  _rrtStepSize: 0.1
-  _rrtRotationStepSize: 15
+  _rrtUseRotation: 1
+  _rrtStepSize: 0.5
+  _rrtRotationStepSize: 5
   _rrtMaxIterations: 10000
   _rrtConnectDistance: 1
   _rrtRandomPointAttempts: 10
+  _rrtWorkspaceBoundsBufferPercentage: 0.5
+  _rrtExplorationBias: 0.5
   _minimumProgressThreshold: 0.1
   _transitionTestSteps: 10
 --- !u!1 &1255209141
@@ -2395,6 +2549,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1456392356}
   - component: {fileID: 1456392355}
+  - component: {fileID: 1456392357}
   m_Layer: 0
   m_Name: CollisionTest (7)
   m_TagString: Untagged
@@ -2414,35 +2569,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed8e1017fae339a458d70ef35ae7d64f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _assemblyRoot: {fileID: 1456392354}
-  _useRotation: 0
-  _assemblyTimeoutSecs: 20
-  _partTimeoutSecs: 10
-  _useRandomSeed: 1
-  _fixedSeed: 44
-  _verbose: 1
-  _bfsStatePositionThreshold: 0.21
-  _bfsStateAngleThreshold: 0.5
-  _simulationForce: 10
-  _simulationTorque: 200
-  _simulationTimeStep: 0.0005
-  _simulationFrameSkip: 90
-  _simulationContactStiffness: 20
-  _simulationContactDamping: 1
-  _simulationMaxVelocity: 0.0025
-  _simulationMaxAngularVelocity: 0.05
-  _simulationContactPointCount: 1024
-  _simulationCollisionThreshold: -0.03
-  _sdfDefaultCellSize: 0.05
-  _sdfBoxPadding: 0.1
-  _useGPU: 1
-  _rrtStepSize: 0.1
-  _rrtRotationStepSize: 15
-  _rrtMaxIterations: 10000
-  _rrtConnectDistance: 1
-  _rrtRandomPointAttempts: 10
-  _minimumProgressThreshold: 0.1
-  _transitionTestSteps: 10
+  _assemblyParts: []
 --- !u!4 &1456392356
 Transform:
   m_ObjectHideFlags: 0
@@ -2462,6 +2589,51 @@ Transform:
   - {fileID: 1573108731}
   m_Father: {fileID: 1935904653}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1456392357
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1456392354}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a33c4346be1bd04e869b68f38e77ded, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _useRotation: 0
+  _useRRTConnect: 1
+  _usePathSimplifier: 1
+  _assemblyTimeoutSecs: 600
+  _partTimeoutSecs: 450
+  _useRandomSeed: 1
+  _fixedSeed: 896
+  _verbose: 1
+  _bfsStatePositionThreshold: 0.21
+  _bfsStateAngleThreshold: 0.5
+  _simulationForce: 10
+  _simulationTorque: 200
+  _simulationTimeStep: 0.0005
+  _simulationFrameSkip: 90
+  _simulationContactStiffness: 20
+  _simulationContactDamping: 1
+  _simulationMaxVelocity: 0.0025
+  _simulationMaxAngularVelocity: 0.05
+  _simulationContactPointCount: 1024
+  _simulationCollisionThreshold: -0.03
+  _sdfDefaultCellSize: 0.05
+  _sdfBoxPadding: 0.1
+  _useGPU: 1
+  _rrtUseRotation: 1
+  _rrtStepSize: 0.5
+  _rrtRotationStepSize: 5
+  _rrtMaxIterations: 10000
+  _rrtConnectDistance: 1
+  _rrtRandomPointAttempts: 10
+  _rrtWorkspaceBoundsBufferPercentage: 0.5
+  _rrtExplorationBias: 0.5
+  _minimumProgressThreshold: 0.1
+  _transitionTestSteps: 10
 --- !u!1001 &1479356596
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3009,6 +3181,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1713159411}
   - component: {fileID: 1713159410}
+  - component: {fileID: 1713159412}
   m_Layer: 0
   m_Name: CollisionTest (9)
   m_TagString: Untagged
@@ -3028,35 +3201,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed8e1017fae339a458d70ef35ae7d64f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _assemblyRoot: {fileID: 1713159409}
-  _useRotation: 0
-  _assemblyTimeoutSecs: 60
-  _partTimeoutSecs: 40
-  _useRandomSeed: 1
-  _fixedSeed: 484
-  _verbose: 1
-  _bfsStatePositionThreshold: 0.21
-  _bfsStateAngleThreshold: 0.5
-  _simulationForce: 10
-  _simulationTorque: 200
-  _simulationTimeStep: 0.0005
-  _simulationFrameSkip: 90
-  _simulationContactStiffness: 20
-  _simulationContactDamping: 1
-  _simulationMaxVelocity: 0.0025
-  _simulationMaxAngularVelocity: 0.05
-  _simulationContactPointCount: 1024
-  _simulationCollisionThreshold: -0.03
-  _sdfDefaultCellSize: 0.05
-  _sdfBoxPadding: 0.1
-  _useGPU: 1
-  _rrtStepSize: 0.1
-  _rrtRotationStepSize: 15
-  _rrtMaxIterations: 10000
-  _rrtConnectDistance: 1
-  _rrtRandomPointAttempts: 10
-  _minimumProgressThreshold: 0.1
-  _transitionTestSteps: 10
+  _assemblyParts: []
 --- !u!4 &1713159411
 Transform:
   m_ObjectHideFlags: 0
@@ -3076,6 +3221,51 @@ Transform:
   - {fileID: 469497677}
   m_Father: {fileID: 1935904653}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1713159412
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1713159409}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a33c4346be1bd04e869b68f38e77ded, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _useRotation: 0
+  _useRRTConnect: 1
+  _usePathSimplifier: 1
+  _assemblyTimeoutSecs: 600
+  _partTimeoutSecs: 450
+  _useRandomSeed: 1
+  _fixedSeed: 896
+  _verbose: 1
+  _bfsStatePositionThreshold: 0.21
+  _bfsStateAngleThreshold: 0.5
+  _simulationForce: 10
+  _simulationTorque: 200
+  _simulationTimeStep: 0.0005
+  _simulationFrameSkip: 90
+  _simulationContactStiffness: 20
+  _simulationContactDamping: 1
+  _simulationMaxVelocity: 0.0025
+  _simulationMaxAngularVelocity: 0.05
+  _simulationContactPointCount: 1024
+  _simulationCollisionThreshold: -0.03
+  _sdfDefaultCellSize: 0.05
+  _sdfBoxPadding: 0.1
+  _useGPU: 1
+  _rrtUseRotation: 1
+  _rrtStepSize: 0.5
+  _rrtRotationStepSize: 5
+  _rrtMaxIterations: 10000
+  _rrtConnectDistance: 1
+  _rrtRandomPointAttempts: 10
+  _rrtWorkspaceBoundsBufferPercentage: 0.5
+  _rrtExplorationBias: 0.5
+  _minimumProgressThreshold: 0.1
+  _transitionTestSteps: 10
 --- !u!4 &1716833892 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: bd6d2dba3eb956248ad3333379b331ac,
@@ -3243,6 +3433,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1897091662}
   - component: {fileID: 1897091661}
+  - component: {fileID: 1897091663}
   m_Layer: 0
   m_Name: CollisionTest (5)
   m_TagString: Untagged
@@ -3262,35 +3453,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed8e1017fae339a458d70ef35ae7d64f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _assemblyRoot: {fileID: 1897091662}
-  _useRotation: 0
-  _assemblyTimeoutSecs: 20
-  _partTimeoutSecs: 10
-  _useRandomSeed: 1
-  _fixedSeed: 44
-  _verbose: 1
-  _bfsStatePositionThreshold: 0.21
-  _bfsStateAngleThreshold: 0.5
-  _simulationForce: 10
-  _simulationTorque: 200
-  _simulationTimeStep: 0.0005
-  _simulationFrameSkip: 90
-  _simulationContactStiffness: 20
-  _simulationContactDamping: 1
-  _simulationMaxVelocity: 0.0025
-  _simulationMaxAngularVelocity: 0.05
-  _simulationContactPointCount: 1024
-  _simulationCollisionThreshold: -0.03
-  _sdfDefaultCellSize: 0.05
-  _sdfBoxPadding: 0.1
-  _useGPU: 1
-  _rrtStepSize: 0.1
-  _rrtRotationStepSize: 15
-  _rrtMaxIterations: 10000
-  _rrtConnectDistance: 1
-  _rrtRandomPointAttempts: 10
-  _minimumProgressThreshold: 0.1
-  _transitionTestSteps: 10
+  _assemblyParts: []
 --- !u!4 &1897091662
 Transform:
   m_ObjectHideFlags: 0
@@ -3308,6 +3471,51 @@ Transform:
   - {fileID: 2135013394}
   m_Father: {fileID: 1569423311}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1897091663
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1897091660}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a33c4346be1bd04e869b68f38e77ded, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _useRotation: 0
+  _useRRTConnect: 1
+  _usePathSimplifier: 1
+  _assemblyTimeoutSecs: 600
+  _partTimeoutSecs: 450
+  _useRandomSeed: 1
+  _fixedSeed: 896
+  _verbose: 1
+  _bfsStatePositionThreshold: 0.21
+  _bfsStateAngleThreshold: 0.5
+  _simulationForce: 10
+  _simulationTorque: 200
+  _simulationTimeStep: 0.0005
+  _simulationFrameSkip: 90
+  _simulationContactStiffness: 20
+  _simulationContactDamping: 1
+  _simulationMaxVelocity: 0.0025
+  _simulationMaxAngularVelocity: 0.05
+  _simulationContactPointCount: 1024
+  _simulationCollisionThreshold: -0.03
+  _sdfDefaultCellSize: 0.05
+  _sdfBoxPadding: 0.1
+  _useGPU: 1
+  _rrtUseRotation: 1
+  _rrtStepSize: 0.5
+  _rrtRotationStepSize: 5
+  _rrtMaxIterations: 10000
+  _rrtConnectDistance: 1
+  _rrtRandomPointAttempts: 10
+  _rrtWorkspaceBoundsBufferPercentage: 0.5
+  _rrtExplorationBias: 0.5
+  _minimumProgressThreshold: 0.1
+  _transitionTestSteps: 10
 --- !u!4 &1912526618 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 2f2eee53a45ae164ba24157a9a2481e4,
@@ -3358,6 +3566,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1944942509}
   - component: {fileID: 1944942508}
+  - component: {fileID: 1944942510}
   m_Layer: 0
   m_Name: CollisionTest (1)
   m_TagString: Untagged
@@ -3377,35 +3586,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed8e1017fae339a458d70ef35ae7d64f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _assemblyRoot: {fileID: 1944942509}
-  _useRotation: 0
-  _assemblyTimeoutSecs: 20
-  _partTimeoutSecs: 10
-  _useRandomSeed: 1
-  _fixedSeed: 44
-  _verbose: 1
-  _bfsStatePositionThreshold: 0.21
-  _bfsStateAngleThreshold: 0.5
-  _simulationForce: 10
-  _simulationTorque: 200
-  _simulationTimeStep: 0.0005
-  _simulationFrameSkip: 90
-  _simulationContactStiffness: 20
-  _simulationContactDamping: 1
-  _simulationMaxVelocity: 0.0025
-  _simulationMaxAngularVelocity: 0.05
-  _simulationContactPointCount: 1024
-  _simulationCollisionThreshold: -0.03
-  _sdfDefaultCellSize: 0.05
-  _sdfBoxPadding: 0.1
-  _useGPU: 1
-  _rrtStepSize: 0.1
-  _rrtRotationStepSize: 15
-  _rrtMaxIterations: 10000
-  _rrtConnectDistance: 1
-  _rrtRandomPointAttempts: 10
-  _minimumProgressThreshold: 0.1
-  _transitionTestSteps: 10
+  _assemblyParts: []
 --- !u!4 &1944942509
 Transform:
   m_ObjectHideFlags: 0
@@ -3423,6 +3604,51 @@ Transform:
   - {fileID: 1151388029117170252}
   m_Father: {fileID: 1569423311}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1944942510
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1944942507}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a33c4346be1bd04e869b68f38e77ded, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _useRotation: 0
+  _useRRTConnect: 1
+  _usePathSimplifier: 1
+  _assemblyTimeoutSecs: 600
+  _partTimeoutSecs: 450
+  _useRandomSeed: 1
+  _fixedSeed: 896
+  _verbose: 1
+  _bfsStatePositionThreshold: 0.21
+  _bfsStateAngleThreshold: 0.5
+  _simulationForce: 10
+  _simulationTorque: 200
+  _simulationTimeStep: 0.0005
+  _simulationFrameSkip: 90
+  _simulationContactStiffness: 20
+  _simulationContactDamping: 1
+  _simulationMaxVelocity: 0.0025
+  _simulationMaxAngularVelocity: 0.05
+  _simulationContactPointCount: 1024
+  _simulationCollisionThreshold: -0.03
+  _sdfDefaultCellSize: 0.05
+  _sdfBoxPadding: 0.1
+  _useGPU: 1
+  _rrtUseRotation: 1
+  _rrtStepSize: 0.5
+  _rrtRotationStepSize: 5
+  _rrtMaxIterations: 10000
+  _rrtConnectDistance: 1
+  _rrtRandomPointAttempts: 10
+  _rrtWorkspaceBoundsBufferPercentage: 0.5
+  _rrtExplorationBias: 0.5
+  _minimumProgressThreshold: 0.1
+  _transitionTestSteps: 10
 --- !u!1 &1981633080
 GameObject:
   m_ObjectHideFlags: 0
@@ -3433,6 +3659,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1981633082}
   - component: {fileID: 1981633081}
+  - component: {fileID: 1981633083}
   m_Layer: 0
   m_Name: CollisionTest (3)
   m_TagString: Untagged
@@ -3452,35 +3679,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed8e1017fae339a458d70ef35ae7d64f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _assemblyRoot: {fileID: 1981633082}
-  _useRotation: 0
-  _assemblyTimeoutSecs: 20
-  _partTimeoutSecs: 10
-  _useRandomSeed: 1
-  _fixedSeed: 44
-  _verbose: 1
-  _bfsStatePositionThreshold: 0.21
-  _bfsStateAngleThreshold: 0.5
-  _simulationForce: 10
-  _simulationTorque: 200
-  _simulationTimeStep: 0.0005
-  _simulationFrameSkip: 90
-  _simulationContactStiffness: 20
-  _simulationContactDamping: 1
-  _simulationMaxVelocity: 0.0025
-  _simulationMaxAngularVelocity: 0.05
-  _simulationContactPointCount: 1024
-  _simulationCollisionThreshold: -0.03
-  _sdfDefaultCellSize: 0.05
-  _sdfBoxPadding: 0.1
-  _useGPU: 1
-  _rrtStepSize: 0.1
-  _rrtRotationStepSize: 15
-  _rrtMaxIterations: 10000
-  _rrtConnectDistance: 1
-  _rrtRandomPointAttempts: 10
-  _minimumProgressThreshold: 0.1
-  _transitionTestSteps: 10
+  _assemblyParts: []
 --- !u!4 &1981633082
 Transform:
   m_ObjectHideFlags: 0
@@ -3498,6 +3697,51 @@ Transform:
   - {fileID: 1338817948}
   m_Father: {fileID: 1569423311}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1981633083
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1981633080}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a33c4346be1bd04e869b68f38e77ded, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _useRotation: 0
+  _useRRTConnect: 1
+  _usePathSimplifier: 1
+  _assemblyTimeoutSecs: 600
+  _partTimeoutSecs: 450
+  _useRandomSeed: 1
+  _fixedSeed: 896
+  _verbose: 1
+  _bfsStatePositionThreshold: 0.21
+  _bfsStateAngleThreshold: 0.5
+  _simulationForce: 10
+  _simulationTorque: 200
+  _simulationTimeStep: 0.0005
+  _simulationFrameSkip: 90
+  _simulationContactStiffness: 20
+  _simulationContactDamping: 1
+  _simulationMaxVelocity: 0.0025
+  _simulationMaxAngularVelocity: 0.05
+  _simulationContactPointCount: 1024
+  _simulationCollisionThreshold: -0.03
+  _sdfDefaultCellSize: 0.05
+  _sdfBoxPadding: 0.1
+  _useGPU: 1
+  _rrtUseRotation: 1
+  _rrtStepSize: 0.5
+  _rrtRotationStepSize: 5
+  _rrtMaxIterations: 10000
+  _rrtConnectDistance: 1
+  _rrtRandomPointAttempts: 10
+  _rrtWorkspaceBoundsBufferPercentage: 0.5
+  _rrtExplorationBias: 0.5
+  _minimumProgressThreshold: 0.1
+  _transitionTestSteps: 10
 --- !u!1001 &2031506904
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3726,6 +3970,90 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2103662994}
   m_Mesh: {fileID: -6713384568916958135, guid: 43e62a0681b27bc45915e3d36f5fd274, type: 3}
+--- !u!1001 &2128407947
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 936974376}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: 41ae3afeca68404478a7fc6d829b3b84,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -13.14
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 41ae3afeca68404478a7fc6d829b3b84,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -2.11
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 41ae3afeca68404478a7fc6d829b3b84,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 41ae3afeca68404478a7fc6d829b3b84,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 41ae3afeca68404478a7fc6d829b3b84,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 41ae3afeca68404478a7fc6d829b3b84,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 41ae3afeca68404478a7fc6d829b3b84,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 41ae3afeca68404478a7fc6d829b3b84,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 41ae3afeca68404478a7fc6d829b3b84,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 41ae3afeca68404478a7fc6d829b3b84,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -7635826562936255635, guid: 41ae3afeca68404478a7fc6d829b3b84,
+        type: 3}
+      propertyPath: m_DynamicOccludee
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -7635826562936255635, guid: 41ae3afeca68404478a7fc6d829b3b84,
+        type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: e147ddfca55dfd9479e330ce59a950cf, type: 2}
+    - target: {fileID: 919132149155446097, guid: 41ae3afeca68404478a7fc6d829b3b84,
+        type: 3}
+      propertyPath: m_Name
+      value: 1 (1)
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 41ae3afeca68404478a7fc6d829b3b84, type: 3}
+--- !u!4 &2128407948 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 41ae3afeca68404478a7fc6d829b3b84,
+    type: 3}
+  m_PrefabInstance: {fileID: 2128407947}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &2131481671
 GameObject:
   m_ObjectHideFlags: 0

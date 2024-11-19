@@ -72,7 +72,7 @@ namespace PhysicsDisassembly.RRTConnect
                 .ToArray();
 
             var randomSeed = DateTime.Now.Millisecond;
-            var rrtConnect = new RRTConnect(_testObject.name, _testObject, _otherObjects, rrtConfiguration);
+            var rrtConnect = new RRTConnectPlanner(_testObject.name, _testObject, _otherObjects, rrtConfiguration);
             var path = rrtConnect.PlanPath(startState, goalState, otherStates, randomSeed);
             if (path == null)
             {
@@ -89,11 +89,19 @@ namespace PhysicsDisassembly.RRTConnect
             }
             
             var physicsSimulation = new PhysicsSimulation(partObjects, null, _rrtUseRotation, 
-                new PhysicsSimulationConfiguration() { SimulationContactPointCount = 0 });
-            var pathSimplifier = new PathSimplifier(physicsSimulation, path.PartID, 
-                _minimumProgressThreshold, _transitionTestSteps, true);
+                new PhysicsSimulationConfiguration()
+                {
+                    SimulationContactPointCount = 0
+                });
             
-            path = pathSimplifier.SimplifyPath(path, _rrtUseRotation, false);
+            var pathSimplifier = new PathSimplifier(physicsSimulation, path.PartID,
+                new PathSimplifierConfiguration()
+                {
+                    SimplifierMinimumProgressThreshold = _minimumProgressThreshold, 
+                    SimplifierTransitionTestSteps = _transitionTestSteps
+                });
+            
+            path = pathSimplifier.SimplifyPath(path, _rrtUseRotation, false, true);
             
             var pathSize = path.Positions.Count;
             Debug.Log($"TestRRTConnect found {pathSize} positions AFTER simplification");

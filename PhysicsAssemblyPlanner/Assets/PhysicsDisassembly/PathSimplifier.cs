@@ -5,32 +5,29 @@ namespace PhysicsDisassembly
 {
     public class PathSimplifier
     {
+        private readonly string _partId;
+        private readonly Vector3 _partPivotCenterOffset;
+        private readonly PathSimplifierConfiguration _configuration;
+        
         private PhysicsSimulation _simulation;
-        private string _partId;
-        private Vector3 _partPivotCenterOffset;
         private bool _useRotation;
         private bool _useSDFCollision;
         private bool _verbose;
         
-        // Minimum distance to consider as progress
-        private float _minProgressThreshold;
-        private int _transitionTestSteps;
-
-        public PathSimplifier(PhysicsSimulation simulation, string partId, float minProgressThreshold = 0.1f, int transitionTestSteps = 10, bool verbose = false)
+        public PathSimplifier(PhysicsSimulation simulation, string partId, PathSimplifierConfiguration configuration)
         {
             _simulation = simulation;
             _partId = partId;
-            _minProgressThreshold = minProgressThreshold;
-            _transitionTestSteps = transitionTestSteps;
-            _verbose = verbose;
+            _configuration = configuration;
             
             _partPivotCenterOffset = _simulation.GetPart(partId).PivotCenterOffset;
         }
 
-        public Path SimplifyPath(Path originalPath, bool useRotation, bool useSDFCollision = true)
+        public Path SimplifyPath(Path originalPath, bool useRotation, bool useSDFCollision = true, bool verbose = false)
         {
             _useRotation = useRotation;
             _useSDFCollision = useSDFCollision;
+            _verbose = verbose;
             
             _simulation.Reset();
             
@@ -95,7 +92,7 @@ namespace PhysicsDisassembly
                 // TODO: 
                 
                 // Check if this state represents significant progress
-                if (/*totalProgress > bestProgress && */totalProgress > /*previousProgress +*/ _minProgressThreshold)
+                if (/*totalProgress > bestProgress && */totalProgress > /*previousProgress +*/ _configuration.SimplifierMinimumProgressThreshold)
                 {
                     
 
@@ -162,9 +159,9 @@ namespace PhysicsDisassembly
         private bool IsValidTransition(Vector3 startPos, Quaternion startRot, Vector3 endPos, Quaternion endRot)
         {
             // Test if we can move directly between these states
-            for (var i = 1; i <= _transitionTestSteps; i++)
+            for (var i = 1; i <= _configuration.SimplifierTransitionTestSteps; i++)
             {
-                var t = i / (float)_transitionTestSteps;
+                var t = i / (float)_configuration.SimplifierTransitionTestSteps;
                 var testPos = Vector3.Lerp(startPos, endPos, t);
                 
                 _simulation.SetPivotPosition(_partId, testPos);

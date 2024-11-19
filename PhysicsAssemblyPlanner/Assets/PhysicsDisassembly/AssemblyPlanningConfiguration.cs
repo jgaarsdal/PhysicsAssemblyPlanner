@@ -4,12 +4,15 @@ namespace PhysicsDisassembly
     public struct AssemblyPlanningConfiguration
     {
         public bool DisassemblyUseRotation { get; set; }
+        public bool UseRRTConnect { get; set; }
+        public bool UsePathSimplifier { get; set; }
         public BFSPlannerConfiguration BFSPlannerConfiguration { get; set; }
         public float AssemblyTimeoutSecs { get; set; }
         public float PartTimeoutSecs { get; set; }
         public PhysicsSimulationConfiguration PhysicsSimulationConfiguration { get; set; }
         public SDFCollisionConfiguration SDFCollisionConfiguration { get; set; }
         public RRTConfiguration RRTConfiguration { get; set; }
+        public PathSimplifierConfiguration SimplifierConfiguration { get; set; }
         public bool Verbose { get; set; }
     }
     
@@ -50,5 +53,11 @@ namespace PhysicsDisassembly
         public int RRTRandomPointAttempts { get; set; }
         public float RRTExplorationBias { get; set; } // 0 = pure exploitation, 1 = pure exploration
         public float RRTWorkspaceBoundsBufferPercentage { get; set; }
+    }
+
+    public struct PathSimplifierConfiguration
+    {
+        public float SimplifierMinimumProgressThreshold { get; set; }
+        public int SimplifierTransitionTestSteps { get; set; }
     }
 }
