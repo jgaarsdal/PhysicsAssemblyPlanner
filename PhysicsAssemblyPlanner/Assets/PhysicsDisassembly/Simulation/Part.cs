@@ -10,7 +10,7 @@ namespace PhysicsDisassembly.Simulation
             set
             {
                 _centerPosition = value;
-                _pivotPosition = _centerPosition - Rotation * _centerOffset;
+                _pivotPosition = _centerPosition - Rotation * _centerOffset; // TODO: Need rotation?
             } 
         }
         
@@ -20,7 +20,7 @@ namespace PhysicsDisassembly.Simulation
             set
             {
                 _pivotPosition = value;
-                _centerPosition = _pivotPosition + Rotation *_centerOffset;
+                _centerPosition = _pivotPosition + Rotation *_centerOffset; // TODO: Need rotation?
             }
         }
         
@@ -76,7 +76,8 @@ namespace PhysicsDisassembly.Simulation
                 sum += vertex;
             }
 
-            _centerOffset = sum / _localVertices.Length;
+            var center = sum / _localVertices.Length;
+            _centerOffset = center - _initialTransformPosition;
 
             _initialTransformPosition = initialTransformPosition;
             _initialRotation = initialRotation;

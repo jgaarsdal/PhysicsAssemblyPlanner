@@ -49,7 +49,7 @@ namespace PhysicsDisassembly
             Debug.Log("Finished Initialize Signed Distance Fields");
         }
 
-        public (string status, List<Path> sequence, int seqCount, float totalDurationSecs) PlanSequence(int randomSeed)
+        public (string status, List<Path> sequence, int seqCount, float totalDurationSecs) PlanDisassemblySequence(int randomSeed)
         {
             UnityEngine.Random.InitState(randomSeed);
             
@@ -109,11 +109,11 @@ namespace PhysicsDisassembly
                     Debug.Log($"Still parts: {string.Join(", ", stillIds)}");
                 }
                 
-                var (status, durationSecs, path) = PlanPath(moveId, stillIds, false, maxDepth);
+                var (status, durationSecs, path) = PlanPartPath(moveId, stillIds, false, maxDepth);
 
                 if (_failureStatus.Contains(status) && _configuration.DisassemblyUseRotation)
                 {
-                    var (rotationStatus, durationRotationSecs, pathRotation) = PlanPath(moveId, stillIds, true, maxDepth);
+                    var (rotationStatus, durationRotationSecs, pathRotation) = PlanPartPath(moveId, stillIds, true, maxDepth);
                     status = rotationStatus;
                     path = pathRotation;
                     durationSecs += durationRotationSecs;
@@ -149,10 +149,20 @@ namespace PhysicsDisassembly
                     Debug.Log($"Active queue: {string.Join(", ", activeQueue)}");
                     Debug.Log($"Inactive queue: {string.Join(", ", inactiveQueue)}");
                 }
-
+                
                 if (allIds.Count == 1)
                 {
+                    // Only one part left that is already disassembled
                     seqStatus = "Success";
+                    
+                    var finalPartId = allIds.First();
+                    var finalPartObject = _partObjects[finalPartId];
+                    var initStatePath = new Path(finalPartId, finalPartObject);
+                    initStatePath.Positions.Add(finalPartObject.position);
+                    initStatePath.Orientations.Add(finalPartObject.rotation);
+                    
+                    sequence.Add(initStatePath);
+                    
                     break;
                 }
 
@@ -165,8 +175,7 @@ namespace PhysicsDisassembly
 
             if (_configuration.Verbose)
             {
-                Debug.Log(
-                    $"Result: {seqStatus} | Disassembled: {sequence.Count}/{_partIds.Count - 1} | Total # trials: {seqCount} | Total planning time: {totalDurationSecs}");
+                Debug.Log($"Result: {seqStatus} | Disassembled: {sequence.Count}/{_partIds.Count} | Total # trials: {seqCount} | Total planning time: {totalDurationSecs}");
                 Debug.Log($"Sequence: {string.Join(", ", sequence.Select(p => p.PartID))}");
             }
 
@@ -197,7 +206,7 @@ namespace PhysicsDisassembly
             }
         }
 
-        private (string status, float tPlan, Path path) PlanPath(string moveId, List<string> stillIds, bool rotation, int maxDepth)
+        private (string status, float tPlan, Path path) PlanPartPath(string moveId, List<string> stillIds, bool rotation, int maxDepth)
         {
             // Increment attempts when we actually try to plan a path
             _attemptsPerPart[moveId]++;
@@ -219,7 +228,7 @@ namespace PhysicsDisassembly
             var planner = new BFSPlanner(moveId, stillIds, rotation, currentPartObjects, currentPartSDFs, 
                 _configuration.BFSPlannerConfiguration, _configuration.PhysicsSimulationConfiguration);
             
-            var (status, tPlan, path) = planner.Plan(_configuration.PartTimeoutSecs, maxDepth, _configuration.Verbose);
+            var (status, tPlan, path) = planner.PlanPath(_configuration.PartTimeoutSecs, maxDepth, _configuration.Verbose);
 
             return (status, tPlan, path);
         }

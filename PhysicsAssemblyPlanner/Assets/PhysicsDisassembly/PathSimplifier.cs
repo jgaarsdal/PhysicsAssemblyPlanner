@@ -187,7 +187,7 @@ namespace PhysicsDisassembly
         {
             var pivotPosition = path.Positions[index];
             return new State(
-                pivotPosition + (path.Orientations[index] * _partPivotCenterOffset),
+                pivotPosition + /*(path.Orientations[index] **/ _partPivotCenterOffset/*)*/,
                 pivotPosition,
                 path.Orientations[index],
                 Vector3.zero,

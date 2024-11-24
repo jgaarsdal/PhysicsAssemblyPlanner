@@ -116,7 +116,7 @@ namespace PhysicsDisassembly
             await assemblyPlanner.InitializeSignedDistanceFields();
             
             var randomSeed = _useRandomSeed ? DateTime.Now.Millisecond : _fixedSeed;
-            var (status, sequence, seqCount, totalDuration) = assemblyPlanner.PlanSequence(randomSeed);
+            var (status, sequence, seqCount, totalDuration) = assemblyPlanner.PlanDisassemblySequence(randomSeed);
 
             if (configuration.Verbose)
             {
@@ -146,12 +146,7 @@ namespace PhysicsDisassembly
             }
             
             if (configuration.UseRRTConnect)
-            
-                // TODO: Issue is that sequence count is 1 less than the total number of parts.
-                // TODO: So if there are 2 parts sequence count will be 1
-                
-                Debug.LogError("sequence.Count is " + sequence.Count);
-                
+            {
                 for (var i = 0; i < sequence.Count; i++)
                 {
                     var otherObjects = new Transform[sequence.Count - 1];
@@ -181,9 +176,13 @@ namespace PhysicsDisassembly
                             
                             otherObjects[j - 1] = otherObjectPath.PartObject;
                             
+                            var otherPartPivot = otherObjectPath.PartObject.position;
+                            var otherPartCenter = otherObjectPath.PartObject.GetComponentInChildren<Renderer>().bounds.center;
+                            var otherPartCenterOffset = otherPartCenter - otherPartPivot;
+                            var firstPartPivotPosition = otherObjectPath.Positions[0];
                             otherObjectStates[j - 1] = new State(
-                                otherObjectPath.PartObject.GetComponentInChildren<Renderer>().bounds.center,
-                                otherObjectPath.Positions[0],
+                                firstPartPivotPosition + otherPartCenterOffset,
+                                firstPartPivotPosition,
                                 otherObjectPath.Orientations[0],
                                 Vector3.zero,
                                 Vector3.zero);
@@ -192,9 +191,13 @@ namespace PhysicsDisassembly
 
                     var partPath = sequence[i];
                     
+                    var partPivot = partPath.PartObject.position;
+                    var partCenter = partPath.PartObject.GetComponentInChildren<Renderer>().bounds.center;
+                    var centerOffset = partCenter - partPivot;
+                    var lastPartPivotPosition = partPath.Positions.Last();
                     var startState = new State(
-                        partPath.PartObject.GetComponentInChildren<Renderer>().bounds.center,
-                        partPath.Positions.Last(),
+                        lastPartPivotPosition + centerOffset,
+                        lastPartPivotPosition,
                         partPath.Orientations.Last(),
                         Vector3.zero,
                         Vector3.zero);
@@ -206,8 +209,7 @@ namespace PhysicsDisassembly
                         part.PartFinalState.rotation,
                         Vector3.zero,
                         Vector3.zero);
-
-
+                    
                     var rrtConnect = new RRTConnectPlanner(partPath.PartID, partPath.PartObject, otherObjects,
                         configuration.RRTConfiguration);
                     var rrtPath = rrtConnect.PlanPath(startState, goalState, otherObjectStates, randomSeed);

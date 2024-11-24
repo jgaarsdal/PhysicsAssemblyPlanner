@@ -36,12 +36,6 @@ namespace PhysicsDisassembly.RRTConnect
             // Get the other parts bounds at their start states
             _otherPartBounds = GetPartBounds(_otherObjects, otherPartStates, false);
             
-            // Update the bounds of other parts
-            for (var i = 0; i < _otherPartBounds.Length; i++)
-            {
-                _otherPartBounds[i].center = otherPartStates[i].Position;
-            }
-            
             // Initialize trees
             _treeStart.Clear();
             _treeGoal.Clear();
@@ -62,7 +56,7 @@ namespace PhysicsDisassembly.RRTConnect
                     // Try to connect to goal tree
                     if (TryConnect(newNode, out List<Node> connectionPath))
                     {
-                        Debug.Log($"RRTConnect: Succeeded in finding a path within {i + 1}/{_configuration.RRTMaxIterations} iterations");
+                        Debug.Log($"RRTConnect: Succeeded in finding a path for part '{_partId}' within {i + 1}/{_configuration.RRTMaxIterations} iterations");
                         
                         // Path found - Reconstruct the complete path
                         return ReconstructPath(newNode, connectionPath);
@@ -118,13 +112,13 @@ namespace PhysicsDisassembly.RRTConnect
             
             return newNode;
         }
-
+        
         private bool TryConnect(Node sourceNode, out List<Node> connectionPath)
         {
             connectionPath = new List<Node>();
             var current = sourceNode;
             var nearestTarget = FindNearestNode(_treeGoal, sourceNode.Position);
-
+            
             while (true)
             {
                 var direction = (nearestTarget.Position - current.Position).normalized;
@@ -172,7 +166,8 @@ namespace PhysicsDisassembly.RRTConnect
         private Path ReconstructPath(Node meetingPointStart, List<Node> connectionPath)
         {
             var path = new Path(_partId, _partObject);
-            var partPivotOffset = _partObject.position - _partBounds.center;
+            
+            var partPivotOffset = _partObject.position - _partObject.GetComponentInChildren<Renderer>().bounds.center;
             
             // Add path from start to meeting point
             var startPath = new List<Node>();
@@ -187,22 +182,22 @@ namespace PhysicsDisassembly.RRTConnect
             // Add paths in correct order
             for (var i = startPath.Count - 1; i >= 0; i--)
             {
-                path.Positions.Add(startPath[i].Position + startPath[i].Rotation * partPivotOffset);
+                path.Positions.Add(startPath[i].Position + /* startPath[i].Rotation **/ partPivotOffset);
                 path.Orientations.Add(startPath[i].Rotation);
             }
 
             // Add connection path
             foreach (var node in connectionPath)
             {
-                path.Positions.Add(node.Position + node.Rotation * partPivotOffset);
+                path.Positions.Add(node.Position + /*node.Rotation **/ partPivotOffset);
                 path.Orientations.Add(node.Rotation);
             }
-            
+
             // Add the goal tree in reverse
             for (var i = _treeGoal.Count - 1; i >= 0; i--)
             {
                 var node = _treeGoal[i];
-                path.Positions.Add(node.Position + node.Rotation * partPivotOffset);
+                path.Positions.Add(node.Position + /*node.Rotation **/ partPivotOffset);
                 path.Orientations.Add(node.Rotation);
             }
 
@@ -211,7 +206,7 @@ namespace PhysicsDisassembly.RRTConnect
                 path.Positions.Reverse();
                 path.Orientations.Reverse();
             }
-            
+
             return path;
         }
 
@@ -240,20 +235,20 @@ namespace PhysicsDisassembly.RRTConnect
                     Random.Range(_workspaceBounds.min.y, _workspaceBounds.max.y),
                     Random.Range(_workspaceBounds.min.z, _workspaceBounds.max.z)
                 );
-                
+
                 var nearest = FindNearestNode(tree, randomPoint);
                 var distance = Vector3.Distance(randomPoint, nearest.Position);
                 var canReachPoint = IsValidMovement(nearest.Position, randomPoint);
-                
+
                 var candidate = new SamplingCandidate(randomPoint, distance, nearest, canReachPoint);
-                
+
                 // Update best valid candidate
                 if (canReachPoint && distance > maxValidDistance)
                 {
                     maxValidDistance = distance;
                     bestValidCandidate = candidate;
                 }
-                
+
                 // Update best overall candidate
                 if (distance > maxOverallDistance)
                 {
@@ -261,7 +256,7 @@ namespace PhysicsDisassembly.RRTConnect
                     bestOverallCandidate = candidate;
                 }
             }
-            
+
             // Probabilistically choose between exploration and exploitation
             if (Random.value < _configuration.RRTExplorationBias)
             {
@@ -277,7 +272,7 @@ namespace PhysicsDisassembly.RRTConnect
                     return bestOverallCandidate.Position;
                 }
             }
-        
+
             // Exploitation: Use the best valid candidate
             if (bestValidCandidate != null)
             {
@@ -287,7 +282,7 @@ namespace PhysicsDisassembly.RRTConnect
             // If no valid candidates found, try to make progress toward the goal
             return GetProgressiveRandomPoint(tree);
         }
-        
+
         private bool IsValidMovement(Vector3 fromPosition, Vector3 toPosition)
         {
             var direction = toPosition - fromPosition;
@@ -321,19 +316,19 @@ namespace PhysicsDisassembly.RRTConnect
 
             return true;
         }
-        
+
         private Vector3 GetProgressiveRandomPoint(List<Node> tree)
         {
             var goalPosition = _treeGoal[0].Position;
-            
+
             // Try to make progress toward the goal
             var nearest = FindNearestNode(tree, goalPosition);
             var directionToGoal = (goalPosition - nearest.Position).normalized;
-        
+
             // Add some randomness to avoid getting stuck
             var randomOffset = Random.insideUnitSphere * _configuration.RRTStepSize;
             var direction = (directionToGoal + randomOffset.normalized * 0.5f).normalized;
-        
+
             return FindBestValidPoint(nearest.Position, direction);
         }
 
@@ -361,7 +356,7 @@ namespace PhysicsDisassembly.RRTConnect
             var updatedBounds = new Bounds(position, _partBounds.size);
             return _otherPartBounds.Any(pb => updatedBounds.Intersects(pb));
         }
-        
+
         private Bounds GetPartBounds(Transform part, State state, bool addRotationBuffer)
         {
             var bounds = part.GetComponentInChildren<Renderer>().bounds;
@@ -371,12 +366,12 @@ namespace PhysicsDisassembly.RRTConnect
                 var maxSize = GetBoundsLargestAxisSize(bounds);
                 bounds.size = Vector3.one * maxSize;
             }
-            
+
             bounds.center = state.Position;
 
             return bounds;
         }
-        
+
         private Bounds[] GetPartBounds(Transform[] parts, State[] states, bool addRotationBuffer)
         {
             var bounds = new Bounds[parts.Length];
@@ -384,7 +379,7 @@ namespace PhysicsDisassembly.RRTConnect
             {
                 bounds[i] = GetPartBounds(parts[i], states[i], addRotationBuffer);
             }
-            
+
             return bounds;
         }
 
