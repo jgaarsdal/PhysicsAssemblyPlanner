@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using PhysicsDisassembly.Simulation;
 using PhysicsDisassembly.RRTConnect;
+using PhysicsDisassembly.SDF;
 using UnityEngine;
 
 namespace PhysicsDisassembly
@@ -52,12 +53,21 @@ namespace PhysicsDisassembly
         [SerializeField] [Range(0f, 1f)] private float _rrtExplorationBias = 0.5f;
         
         [Header("Path Simplifier Settings")]  
-        [SerializeField] private float _minimumProgressThreshold = 0.1f; // TODO: or 0.01? Check TestRRTConnect with 0.1 to see
+        [SerializeField] private float _minimumProgressThreshold = 0.1f;
+        [SerializeField] private float _maximumProgressThreshold = 0.5f;
         [SerializeField] private int _transitionTestSteps = 10;
+
+        private int _randomSeed;
+        private AssemblyPart[] _assemblyParts;
+        private Dictionary<string, PartData> _partDataMap;
+        private AssemblyPlanningConfiguration _configuration;
         
-        public async Task<List<Path>> RunPlanner(AssemblyPart[] parts)
+        public async Task InitializeAsync(AssemblyPart[] parts)
         {
-            var configuration = new AssemblyPlanningConfiguration()
+            _randomSeed = _useRandomSeed ? (int)DateTime.Now.Ticks : _fixedSeed;
+            UnityEngine.Random.InitState(_randomSeed);
+            
+            _configuration = new AssemblyPlanningConfiguration()
             {
                 DisassemblyUseRotation = _useRotation,
                 UseRRTConnect = _useRRTConnect,
@@ -102,155 +112,195 @@ namespace PhysicsDisassembly
                 SimplifierConfiguration = new PathSimplifierConfiguration()
                 {
                     SimplifierMinimumProgressThreshold = _minimumProgressThreshold,
+                    SimplifierMaximumProgressThreshold = _maximumProgressThreshold,
                     SimplifierTransitionTestSteps = _transitionTestSteps
                 },
                 Verbose = _verbose
             };
 
-            return await RunPlanner(parts, configuration);
+            _assemblyParts = parts;
+            
+            _partDataMap = new Dictionary<string, PartData>();
+            for (var i = 0; i < parts.Length; i++)
+            {
+                var id = i.ToString();
+                var mesh = parts[i].PartObject.GetComponentInChildren<MeshFilter>().sharedMesh;
+                var sdf = new SignedDistanceField(parts[i].PartObject, _configuration.SDFCollisionConfiguration);
+                var pointCloud = PointCloudSampler.GetPointCloud(mesh.vertices, mesh.triangles, 
+                    _configuration.PhysicsSimulationConfiguration.SimulationContactPointCount,
+                    PointCloudSampler.SampleMethod.WeightedBarycentricCoordinates, 
+                    false, new Matrix4x4(), _randomSeed);
+                
+                _partDataMap.Add(id, new PartData(id, parts[i].PartObject, sdf, pointCloud));
+            }
+            
+            await InitializeSignedDistanceFields();
         }
         
-        public async Task<List<Path>> RunPlanner(AssemblyPart[] parts, AssemblyPlanningConfiguration configuration)
+        public List<Path> RunPlanner()
         {
-            var assemblyPlanner = new ProgressiveQueueSequencePlanner(parts, configuration);
-            await assemblyPlanner.InitializeSignedDistanceFields();
-            
-            var randomSeed = _useRandomSeed ? DateTime.Now.Millisecond : _fixedSeed;
-            var (status, sequence, seqCount, totalDuration) = assemblyPlanner.PlanDisassemblySequence(randomSeed);
+            var assemblyPlanner = new ProgressiveQueueSequencePlanner(_partDataMap, _configuration); 
+            var (status, sequence, seqCount, totalDuration) = assemblyPlanner.PlanDisassemblySequence();
 
-            if (configuration.Verbose)
+            if (_configuration.Verbose)
             {
-                Debug.Log($"AssemblyPlanner: Finished planning with status '{status}' and random seed '{randomSeed}'", this);
+                Debug.Log($"AssemblyPlanner: Finished planning with status '{status}' and random seed '{_randomSeed}'", this);
             }
             
-            if (configuration.UsePathSimplifier)
+            if (_configuration.UsePathSimplifier)
             {
-                var physicsSimulation = new PhysicsSimulation(assemblyPlanner.PartObjects, assemblyPlanner.PartSDFs,
-                    _useRotation, configuration.PhysicsSimulationConfiguration);
-                
-                var simplifiedSequence = new List<Path>();
-                foreach (var partPath in sequence)
-                {
-                    var pathSimplifier = new PathSimplifier(physicsSimulation, partPath.PartID, configuration.SimplifierConfiguration);
-                    var simplifiedPath = pathSimplifier.SimplifyPath(partPath, configuration.DisassemblyUseRotation, true, configuration.Verbose);
-
-                    simplifiedSequence.Add(simplifiedPath);
-
-                    if (configuration.Verbose)
-                    {
-                        Debug.Log($"AssemblyPlanner: Finished simplifying part '{partPath.PartID}' from {partPath.Positions.Count} states to {simplifiedPath.Positions.Count} states", this);
-                    }
-                }
-
+                var simplifiedSequence = SimplifySequence(sequence, _partDataMap, _configuration, _configuration.DisassemblyUseRotation, true);
+                sequence.Clear();
                 sequence = simplifiedSequence;
+                GC.Collect(); // TODO
             }
             
-            if (configuration.UseRRTConnect)
+            if (_configuration.UseRRTConnect)
             {
+                PhysicsSimulation rrtPhysicsSimulation = null;
+                if (_configuration.UsePathSimplifier)
+                {
+                    rrtPhysicsSimulation = new PhysicsSimulation(_partDataMap,
+                        _configuration.RRTConfiguration.RRTUseRotation, new PhysicsSimulationConfiguration()
+                        {
+                            SimulationContactPointCount = 0
+                        });
+                }
+                
                 for (var i = 0; i < sequence.Count; i++)
                 {
-                    var otherObjects = new Transform[sequence.Count - 1];
-                    var otherObjectStates = new State[sequence.Count - 1];
-                    for (var j = 0; j < sequence.Count; j++)
-                    {
-                        if (j == i)
-                        {
-                            continue;
-                        }
-                        
-                        if (j < i)
-                        {
-                            otherObjects[j] = sequence[j].PartObject;
-                            
-                            var otherPart = parts.First(p => p.PartObject == sequence[j].PartObject);
-                            otherObjectStates[j] = new State(
-                                otherPart.PartFinalState.GetComponentInChildren<Renderer>().bounds.center,
-                                otherPart.PartFinalState.position,
-                                otherPart.PartFinalState.rotation,
-                                Vector3.zero,
-                                Vector3.zero);
-                        }
-                        else
-                        {
-                            var otherObjectPath = sequence[j];
-                            
-                            otherObjects[j - 1] = otherObjectPath.PartObject;
-                            
-                            var otherPartPivot = otherObjectPath.PartObject.position;
-                            var otherPartCenter = otherObjectPath.PartObject.GetComponentInChildren<Renderer>().bounds.center;
-                            var otherPartCenterOffset = otherPartCenter - otherPartPivot;
-                            var firstPartPivotPosition = otherObjectPath.Positions[0];
-                            otherObjectStates[j - 1] = new State(
-                                firstPartPivotPosition + otherPartCenterOffset,
-                                firstPartPivotPosition,
-                                otherObjectPath.Orientations[0],
-                                Vector3.zero,
-                                Vector3.zero);
-                        }
-                    }
-
-                    var partPath = sequence[i];
-                    
-                    var partPivot = partPath.PartObject.position;
-                    var partCenter = partPath.PartObject.GetComponentInChildren<Renderer>().bounds.center;
-                    var centerOffset = partCenter - partPivot;
-                    var lastPartPivotPosition = partPath.Positions.Last();
-                    var startState = new State(
-                        lastPartPivotPosition + centerOffset,
-                        lastPartPivotPosition,
-                        partPath.Orientations.Last(),
-                        Vector3.zero,
-                        Vector3.zero);
-
-                    var part = parts.First(p => p.PartObject == partPath.PartObject);
-                    var goalState = new State(
-                        part.PartFinalState.GetComponentInChildren<Renderer>().bounds.center,
-                        part.PartFinalState.position,
-                        part.PartFinalState.rotation,
-                        Vector3.zero,
-                        Vector3.zero);
-                    
-                    var rrtConnect = new RRTConnectPlanner(partPath.PartID, partPath.PartObject, otherObjects,
-                        configuration.RRTConfiguration);
-                    var rrtPath = rrtConnect.PlanPath(startState, goalState, otherObjectStates, randomSeed);
+                    var rrtPath = PlanRRTConnectPath(i, sequence, _assemblyParts, _configuration, _randomSeed);
                     if (rrtPath == null)
                     {
-                        Debug.LogError($"AssemblyPlanner: Couldn't find RRT-Connect path to final state for part '{partPath.PartID}'", this);
+                        Debug.LogError($"AssemblyPlanner: Couldn't find RRT-Connect path to final state for part '{sequence[i].PartID}'", this);
                         continue;
                     }
-                    
-                    // TODO: Only use path simplifier once after both planning and RRT-Connect?
-                    
-                    if (configuration.UsePathSimplifier)
+
+                    if (_configuration.UsePathSimplifier)
                     {
-                        var physicsSimulation = new PhysicsSimulation(assemblyPlanner.PartObjects, null,
-                            configuration.RRTConfiguration.RRTUseRotation, new PhysicsSimulationConfiguration()
-                            {
-                                SimulationContactPointCount = 0
-                            });
-                        
-                        var pathSimplifier = new PathSimplifier(physicsSimulation, rrtPath.PartID,
-                            configuration.SimplifierConfiguration);
-                        var simplifiedPath = pathSimplifier.SimplifyPath(rrtPath, configuration.RRTConfiguration.RRTUseRotation, 
-                            false, configuration.Verbose);
-
-                        partPath.Positions.AddRange(simplifiedPath.Positions);
-                        partPath.Orientations.AddRange(simplifiedPath.Orientations);
-
-                        if (configuration.Verbose)
-                        {
-                            Debug.Log($"AssemblyPlanner: Finished simplifying part '{partPath.PartID}' from {partPath.Positions.Count} states to {simplifiedPath.Positions.Count} states", this);
-                        }
+                        var simplifiedPath = SimplifyPath(rrtPath, rrtPhysicsSimulation, _configuration, _configuration.RRTConfiguration.RRTUseRotation, false);
+                
+                        sequence[i].Positions.AddRange(simplifiedPath.Positions);
+                        sequence[i].Orientations.AddRange(simplifiedPath.Orientations);
                     }
                     else
                     {
-                        partPath.Positions.AddRange(rrtPath.Positions);
-                        partPath.Orientations.AddRange(rrtPath.Orientations);
+                        sequence[i].Positions.AddRange(rrtPath.Positions);
+                        sequence[i].Orientations.AddRange(rrtPath.Orientations);
                     }
                 }
             }
 
             return sequence;
+        }
+        
+        private async Task InitializeSignedDistanceFields()
+        {
+            Debug.Log("Start Initialize Signed Distance Fields");
+
+            foreach (var partData in _partDataMap.Values)
+            {
+                await partData.SDF.ComputeSDF();
+            }
+
+            Debug.Log("Finished Initialize Signed Distance Fields");
+        }
+        
+        private List<Path> SimplifySequence(List<Path> sequence, Dictionary<string, PartData> partDataMap, 
+            AssemblyPlanningConfiguration configuration, bool useRotation = false, bool useSDFCollision = true)
+        {
+            var physicsSimulation = new PhysicsSimulation(partDataMap, useRotation, configuration.PhysicsSimulationConfiguration);
+            
+            var simplifiedSequence = new List<Path>();
+            foreach (var partPath in sequence)
+            {
+                var simplifiedPath = SimplifyPath(partPath, physicsSimulation, configuration, useRotation, useSDFCollision);
+                simplifiedSequence.Add(simplifiedPath);
+            }
+
+            return simplifiedSequence;
+        }
+        
+        private Path SimplifyPath(Path partPath, PhysicsSimulation physicsSimulation, 
+            AssemblyPlanningConfiguration configuration, bool useRotation = false, bool useSDFCollision = true)
+        {
+            var pathSimplifier = new PathSimplifier(physicsSimulation, partPath.PartID, configuration.SimplifierConfiguration);
+            var simplifiedPath = pathSimplifier.SimplifyPath(partPath, useRotation, useSDFCollision, configuration.Verbose);
+
+            if (configuration.Verbose)
+            {
+                Debug.Log($"AssemblyPlanner: Finished simplifying part '{partPath.PartID}' from {partPath.Positions.Count} states to {simplifiedPath.Positions.Count} states", this);
+            }
+            
+            return simplifiedPath;
+        }
+
+        private Path PlanRRTConnectPath(int currentPartIndex, List<Path> sequence, AssemblyPart[] parts, 
+            AssemblyPlanningConfiguration configuration, int randomSeed)
+        {
+            var otherObjects = new Transform[sequence.Count - 1];
+            var otherObjectStates = new State[sequence.Count - 1];
+            for (var j = 0; j < sequence.Count; j++)
+            {
+                if (j == currentPartIndex)
+                {
+                    continue;
+                }
+                
+                if (j < currentPartIndex)
+                {
+                    otherObjects[j] = sequence[j].PartObject;
+                    
+                    var otherPart = parts.First(p => p.PartObject == sequence[j].PartObject);
+                    otherObjectStates[j] = new State(
+                        otherPart.PartFinalState.GetComponentInChildren<Renderer>().bounds.center,
+                        otherPart.PartFinalState.position,
+                        otherPart.PartFinalState.rotation,
+                        Vector3.zero,
+                        Vector3.zero);
+                }
+                else
+                {
+                    var otherObjectPath = sequence[j];
+                    
+                    otherObjects[j - 1] = otherObjectPath.PartObject;
+                    
+                    var otherPartPivot = otherObjectPath.PartObject.position;
+                    var otherPartCenter = otherObjectPath.PartObject.GetComponentInChildren<Renderer>().bounds.center;
+                    var otherPartCenterOffset = otherPartCenter - otherPartPivot;
+                    var firstPartPivotPosition = otherObjectPath.Positions[0];
+                    otherObjectStates[j - 1] = new State(
+                        firstPartPivotPosition + otherPartCenterOffset,
+                        firstPartPivotPosition,
+                        otherObjectPath.Orientations[0],
+                        Vector3.zero,
+                        Vector3.zero);
+                }
+            }
+
+            var partPath = sequence[currentPartIndex];
+            
+            var partPivot = partPath.PartObject.position;
+            var partCenter = partPath.PartObject.GetComponentInChildren<Renderer>().bounds.center;
+            var centerOffset = partCenter - partPivot;
+            var lastPartPivotPosition = partPath.Positions.Last();
+            var startState = new State(
+                lastPartPivotPosition + centerOffset,
+                lastPartPivotPosition,
+                partPath.Orientations.Last(),
+                Vector3.zero,
+                Vector3.zero);
+
+            var part = parts.First(p => p.PartObject == partPath.PartObject);
+            var goalState = new State(
+                part.PartFinalState.GetComponentInChildren<Renderer>().bounds.center,
+                part.PartFinalState.position,
+                part.PartFinalState.rotation,
+                Vector3.zero,
+                Vector3.zero);
+            
+            var rrtConnect = new RRTConnectPlanner(partPath.PartID, partPath.PartObject, otherObjects, configuration.RRTConfiguration);
+            return rrtConnect.PlanPath(startState, goalState, otherObjectStates, randomSeed);
         }
     }
 }

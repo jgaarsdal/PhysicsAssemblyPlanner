@@ -58,6 +58,7 @@ namespace PhysicsDisassembly
     public struct PathSimplifierConfiguration
     {
         public float SimplifierMinimumProgressThreshold { get; set; }
+        public float SimplifierMaximumProgressThreshold { get; set; }
         public int SimplifierTransitionTestSteps { get; set; }
     }
 }

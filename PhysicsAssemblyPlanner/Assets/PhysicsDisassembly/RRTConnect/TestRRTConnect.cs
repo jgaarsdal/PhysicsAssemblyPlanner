@@ -24,9 +24,12 @@ namespace PhysicsDisassembly.RRTConnect
         [SerializeField] private int _rrtRandomPointAttempts = 10;
         [SerializeField] private float _rrtWorkspaceBoundsBufferPercentage = 0.5f;
         [SerializeField] [Range(0f, 1f)] private float _rrtExplorationBias = 0.5f;
+        [SerializeField] private bool _useRandomSeed = true;
+        [SerializeField] private int _fixedSeed = 896;
         
         [Header("Path Simplifier Settings")]
         [SerializeField] private float _minimumProgressThreshold = 0.1f;
+        [SerializeField] private float _maximumProgressThreshold = 0.5f;
         [SerializeField] private int _transitionTestSteps = 10;
 
         private Sequence _rrtConnectSequence;
@@ -71,7 +74,7 @@ namespace PhysicsDisassembly.RRTConnect
                     Vector3.zero))
                 .ToArray();
 
-            var randomSeed = DateTime.Now.Millisecond;
+            var randomSeed = _useRandomSeed ? (int)DateTime.Now.Ticks : _fixedSeed;
             var rrtConnect = new RRTConnectPlanner(_testObject.name, _testObject, _otherObjects, rrtConfiguration);
             var path = rrtConnect.PlanPath(startState, goalState, otherStates, randomSeed);
             if (path == null)
@@ -81,14 +84,15 @@ namespace PhysicsDisassembly.RRTConnect
 
             Debug.Log($"TestRRTConnect found {path.Positions.Count} positions BEFORE simplification");
             
-            var partObjects = new Dictionary<string, Transform>();
-            partObjects.Add("0", _testObject);
+            var partDataMap = new Dictionary<string, PartData>();
+            partDataMap.Add("0", new PartData("0", _testObject, null, Array.Empty<Vector3>()));
             for (var i = 0; i < _otherObjects.Length; i++)
             {
-                partObjects.Add((i + 1).ToString(), _otherObjects[i]);
+                var id = (i + 1).ToString();
+                partDataMap.Add(id, new PartData(id, _otherObjects[i], null, Array.Empty<Vector3>()));
             }
             
-            var physicsSimulation = new PhysicsSimulation(partObjects, null, _rrtUseRotation, 
+            var physicsSimulation = new PhysicsSimulation(partDataMap, _rrtUseRotation, 
                 new PhysicsSimulationConfiguration()
                 {
                     SimulationContactPointCount = 0
@@ -97,7 +101,8 @@ namespace PhysicsDisassembly.RRTConnect
             var pathSimplifier = new PathSimplifier(physicsSimulation, path.PartID,
                 new PathSimplifierConfiguration()
                 {
-                    SimplifierMinimumProgressThreshold = _minimumProgressThreshold, 
+                    SimplifierMinimumProgressThreshold = _minimumProgressThreshold,
+                    SimplifierMaximumProgressThreshold = _maximumProgressThreshold,
                     SimplifierTransitionTestSteps = _transitionTestSteps
                 });
             

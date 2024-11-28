@@ -35,8 +35,6 @@ namespace PhysicsDisassembly.SDF
         private readonly Vector3Int[] _triangles;
         private readonly float _boundingBoxPadding;
         private readonly float _defaultCellSize;
-        //private readonly float _collisionPenetrationThreshold;
-        //private readonly int _collisionContactPointCount;
         private readonly bool _useGPU;
         
         // GPU variables
@@ -46,17 +44,15 @@ namespace PhysicsDisassembly.SDF
         private readonly ComputeShader _computeShader;
 
         public SignedDistanceField(Transform objTransform, SDFCollisionConfiguration configuration)
-        : this(objTransform, configuration.SDFDefaultCellSize, configuration.SDFBoxPadding, /*configuration.SDFCollisionPenetrationThreshold,*/ configuration.SDFUseGPU)
+        : this(objTransform, configuration.SDFDefaultCellSize, configuration.SDFBoxPadding, configuration.SDFUseGPU)
         { }
         
-        public SignedDistanceField(Transform objTransform, float defaultCellSize = 0.05f, float boundingBoxPadding = 0.1f, /*float collisionPenetrationThreshold = 0.01f,*/ bool useGPU = true)
+        public SignedDistanceField(Transform objTransform, float defaultCellSize = 0.05f, float boundingBoxPadding = 0.1f, bool useGPU = true)
         {
             _objectTransform = objTransform;
             _objectMeshes = _objectTransform.GetComponentsInChildren<MeshFilter>();
             _defaultCellSize = defaultCellSize;
             _boundingBoxPadding = boundingBoxPadding;
-            //_collisionPenetrationThreshold = collisionPenetrationThreshold;
-            //_collisionContactPointCount = collisionContactPointCount;
             _useGPU = useGPU;
             
             // TODO: Try with cell size that is different for x,y,z 
@@ -127,63 +123,7 @@ namespace PhysicsDisassembly.SDF
             _origin = bounds.min;
 
             _vertices = GetAllVertices();
-            
-            /*
-            // Get contact points for collision test
-            var tris = new int[Triangles.Length * 3];
-
-            for (var i = 0; i < Triangles.Length; i++)
-            {
-                tris[i * 3] = Triangles[i].x;
-                tris[i * 3 + 1] = Triangles[i].y;
-                tris[i * 3 + 2] = Triangles[i].z;
-            }
-            
-            _contactPoints = PointCloudSampler.GetPointCloud(_vertices, tris, 1024,
-                PointCloudSampler.SampleMethod.WeightedBarycentricCoordinates, false);
-                */
         }
-        
-        /*public bool CheckCollision(SignedDistanceField otherSDF)
-        {
-            return CheckCollision(otherSDF, _contactPoints);
-        }
-        
-        public bool CheckCollision(SignedDistanceField otherSDF, Vector3[] contactPoints)
-        {
-            var collisionFound = false;
-            var lockObj = new object();
-
-            // Check all contact points of this object against the other object's SDF
-            Parallel.ForEach(contactPoints, 
-                (contactPoint, state) =>
-                {
-                    // Convert to grid coordinates
-                    var gridPos = otherSDF.WorldToGridPosition(contactPoint);
-
-                    // Check if the point is inside the other object's grid
-                    if (gridPos.x >= 0 && gridPos.x < otherSDF.GridSize &&
-                        gridPos.y >= 0 && gridPos.y < otherSDF.GridSize &&
-                        gridPos.z >= 0 && gridPos.z < otherSDF.GridSize)
-                    {
-                        // Get the SDF value at this point
-                        var distance = otherSDF.GetDistance(gridPos);
-                        
-                        // If the distance is negative or very close to zero, we have a collision
-                        if (distance <= _collisionPenetrationThreshold)
-                        {
-                            lock (lockObj)
-                            {
-                                collisionFound = true;
-                            }
-                            state.Stop();
-                        }
-                    }
-                });
-
-            return collisionFound;
-        }
-        */
         
         private Vector3 GetSDFCellSize(Bounds bounds)
         {

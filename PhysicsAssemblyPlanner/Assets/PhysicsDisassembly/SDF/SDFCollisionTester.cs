@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using PhysicsDisassembly.Simulation;
 using UnityEngine;
@@ -12,6 +13,8 @@ namespace PhysicsDisassembly.SDF
         [SerializeField] private float _sdfBoxPadding = 0.1f;
         [SerializeField] private float _collisionPenetrationThreshold = 0f;
         [SerializeField] private int _collisionContactPointCount = 1024;
+        [SerializeField] private bool _useRandomSeed = true;
+        [SerializeField] private int _fixedSeed = 896;
         [SerializeField] private bool _useGPU = true;
         [SerializeField] private bool _visualize = true;
 
@@ -51,7 +54,16 @@ namespace PhysicsDisassembly.SDF
                 SimulationCollisionThreshold = _collisionPenetrationThreshold
             };
 
-            var partA = new Part(_partA.GetComponentInChildren<MeshFilter>().sharedMesh, _partA.transform.position,
+            var partAMesh = _partA.GetComponentInChildren<MeshFilter>().sharedMesh;
+            
+            var randomSeed = _useRandomSeed ? (int)DateTime.Now.Ticks : _fixedSeed;
+            
+            var partAContactPoints = PointCloudSampler.GetPointCloud(partAMesh.vertices, partAMesh.triangles, 
+                _collisionContactPointCount,
+                PointCloudSampler.SampleMethod.WeightedBarycentricCoordinates, 
+                false, new Matrix4x4(), randomSeed);
+            
+            var partA = new SimulationPart(partAMesh, partAContactPoints, _partA.transform.position,
                 _partA.transform.rotation, _partA.transform.localScale, physicsSimulationConfiguration);
             
             var contactPoints = partA.GetContactPoints();

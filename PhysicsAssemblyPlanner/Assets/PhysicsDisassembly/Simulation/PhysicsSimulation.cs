@@ -2,133 +2,132 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using PhysicsDisassembly.SDF;
 
 namespace PhysicsDisassembly.Simulation
 {
     public class PhysicsSimulation
     {
-        private Dictionary<string, Part> _parts = new Dictionary<string, Part>();
+        private Dictionary<string, SimulationPart> _simulationParts = new Dictionary<string, SimulationPart>();
         private Dictionary<string, SDFCollisionPart> _collisionParts = new Dictionary<string, SDFCollisionPart>();
         private PhysicsSimulationConfiguration _configuration;
         private bool _useRotation;
 
-        public PhysicsSimulation(Dictionary<string, Transform> partObjects, Dictionary<string, SignedDistanceField> partSDFs, 
-            bool useRotation, PhysicsSimulationConfiguration configuration)
+        public PhysicsSimulation(Dictionary<string, PartData> partDataMap, bool useRotation, PhysicsSimulationConfiguration configuration)
         {
             _configuration = configuration;
             _useRotation = useRotation;
 
-            foreach (var kvp in partObjects)
+            foreach (var kvp in partDataMap)
             {
                 var partId = kvp.Key;
-                var partObject = kvp.Value;
+                var partData = kvp.Value;
+                var partObject = partData.PartObject;
+                
+                _simulationParts.Add(partId, new SimulationPart(partObject.GetComponentInChildren<MeshFilter>().sharedMesh, 
+                    partData.LocalContactPoints, partObject.position, partObject.rotation, partObject.localScale, configuration));
 
-                _parts[partId] = new Part(partObject.GetComponentInChildren<MeshFilter>().sharedMesh, partObject.position,
-                    partObject.rotation, partObject.localScale, configuration);
-
-                if (partSDFs != null && partSDFs.TryGetValue(partId, out var partSDF))
+                if (partData.SDF != null)
                 {
-                    _collisionParts[partId] = new SDFCollisionPart(partId, this, partSDF, _configuration);
+                    _collisionParts.Add(partId, new SDFCollisionPart(partId, this, partData.SDF, _configuration));
                 }
             }
         }
 
         public void Reset()
         {
-            foreach (var part in _parts.Values)
+            foreach (var part in _simulationParts.Values)
             {
                 part.Reset();
             }
         }
 
-        public Part GetPart(string partId)
+        public SimulationPart GetPart(string partId)
         {
-            return _parts[partId];
+            return _simulationParts[partId];
         }
         
         public Vector3 GetPosition(string partId)
         {
-            return _parts[partId].CenterPosition;
+            return _simulationParts[partId].CenterPosition;
         }
 
         public Vector3 GetPivotPosition(string partId)
         {
-            return _parts[partId].PivotPosition;
+            return _simulationParts[partId].PivotPosition;
         }
 
         public Quaternion GetRotation(string partId)
         {
-            return _parts[partId].Rotation;
+            return _simulationParts[partId].Rotation;
         }
 
         public Vector3 GetVelocity(string partId)
         {
-            return _parts[partId].Velocity;
+            return _simulationParts[partId].Velocity;
         }
 
         public Vector3 GetAngularVelocity(string partId)
         {
-            return _parts[partId].AngularVelocity;
+            return _simulationParts[partId].AngularVelocity;
         }
 
         public void SetCenterPosition(string partId, Vector3 position)
         {
-            _parts[partId].CenterPosition = position;
+            _simulationParts[partId].CenterPosition = position;
         }
         
         public void SetPivotPosition(string partId, Vector3 position)
         {
-            _parts[partId].PivotPosition = position;
+            _simulationParts[partId].PivotPosition = position;
         }
 
         public void SetRotation(string partId, Quaternion rotation)
         {
-            _parts[partId].Rotation = rotation;
+            _simulationParts[partId].Rotation = rotation;
         }
 
         public void SetVelocity(string partId, Vector3 velocity)
         {
-            _parts[partId].Velocity = velocity;
+            _simulationParts[partId].Velocity = velocity;
         }
 
         public void SetAngularVelocity(string partId, Vector3 angularVelocity)
         {
-            _parts[partId].AngularVelocity = angularVelocity;
+            _simulationParts[partId].AngularVelocity = angularVelocity;
         }
 
         public void ApplyForce(string partId, Vector3 force)
         {
-            _parts[partId].ApplyForce(force);
+            _simulationParts[partId].ApplyForce(force);
         }
 
         public void ApplyForceAndTorque(string partId, Vector3 force, Vector3 torque)
         {
-            _parts[partId].ApplyForce(force);
-            _parts[partId].ApplyTorque(torque);
+            _simulationParts[partId].ApplyForce(force);
+            _simulationParts[partId].ApplyTorque(torque);
         }
 
         public void ApplyForceAtPoint(string partId, Vector3 contactForce, Vector3 vertex)
         {
             if (_useRotation)
             {
-                _parts[partId].ApplyForceAtPoint(contactForce, vertex);
+                _simulationParts[partId].ApplyForceAtPoint(contactForce, vertex);
             }
             else
             {
-                _parts[partId].ApplyForce(contactForce);
+                _simulationParts[partId].ApplyForce(contactForce);
             }
         }
 
         public Bounds GetBounds(string partId)
         {
-            return _parts[partId].Bounds;
+            return _simulationParts[partId].Bounds;
         }
 
         public void UpdateParts()
         {
             // Update the physics simulation
-            foreach (var part in _parts.Values)
+            foreach (var part in _simulationParts.Values)
             {
                 part.Update();
             }
@@ -151,7 +150,7 @@ namespace PhysicsDisassembly.Simulation
             {
                 var moveBounds = GetBounds(movingPartId);
 
-                var stillPartBounds = _parts
+                var stillPartBounds = _simulationParts
                     .Where(kvp => kvp.Key != movingPartId)
                     .Select(kvp => kvp.Value.Bounds)
                     .ToArray();
@@ -227,7 +226,7 @@ namespace PhysicsDisassembly.Simulation
 
         public Vector3[] GetVertices(string partId, bool worldSpace = true)
         {
-            if (_parts.TryGetValue(partId, out Part part))
+            if (_simulationParts.TryGetValue(partId, out SimulationPart part))
             {
                 return part.GetVertices(worldSpace);
             }
@@ -237,7 +236,7 @@ namespace PhysicsDisassembly.Simulation
         
         public Vector3[] GetContactPoints(string partId)
         {
-            if (_parts.TryGetValue(partId, out Part part))
+            if (_simulationParts.TryGetValue(partId, out SimulationPart part))
             {
                 return part.GetContactPoints();
             }
@@ -247,7 +246,7 @@ namespace PhysicsDisassembly.Simulation
 
         private void Step()
         {
-            foreach (var part in _parts.Values)
+            foreach (var part in _simulationParts.Values)
             {
                 part.Step(_configuration.SimulationTimeStep);
             }

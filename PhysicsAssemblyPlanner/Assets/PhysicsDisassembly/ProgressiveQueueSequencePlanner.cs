@@ -1,58 +1,33 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
-using PhysicsDisassembly.SDF;
 
 namespace PhysicsDisassembly
 {
     public class ProgressiveQueueSequencePlanner
     {
-        public Dictionary<string, Transform> PartObjects => _partObjects;
-        public Dictionary<string, SignedDistanceField> PartSDFs => _partSDFs;
-        
-        private List<string> _partIds = new List<string>();
-        private Dictionary<string, Transform> _partObjects = new Dictionary<string, Transform>();
-        private Dictionary<string, SignedDistanceField> _partSDFs = new Dictionary<string, SignedDistanceField>();
+        private string[] _partIds;
         private AssemblyPlanningConfiguration _configuration;
         
         private readonly string[] _successStatus = { "Success", "Already disassembled" };
         private readonly string[] _failureStatus = { "Timeout", "Failure" };
+        private readonly Dictionary<string, PartData> _partDataMap;
 
         private Dictionary<string, int> _attemptsPerPart = new Dictionary<string, int>();
         private Dictionary<string, HashSet<string>> _blockedByRelations = new Dictionary<string, HashSet<string>>();
         
-        private const int _maxAttemptsPerPart = 10;
+        private const int _maxAttemptsPerPart = 1;
         
-        public ProgressiveQueueSequencePlanner(AssemblyPart[] parts, AssemblyPlanningConfiguration configuration)
+        public ProgressiveQueueSequencePlanner(Dictionary<string, PartData> partDataMap, AssemblyPlanningConfiguration configuration)
         {
             _configuration = configuration;
-            
-            for (var i = 0; i < parts.Length; i++)
-            {
-                var id = i.ToString();
-                _partIds.Add(id);
-                _partObjects.Add(id, parts[i].PartObject);
-                _partSDFs.Add(id, new SignedDistanceField(parts[i].PartObject, _configuration.SDFCollisionConfiguration));
-            }
+
+            _partIds = partDataMap.Keys.ToArray();
+            _partDataMap = partDataMap;
         }
 
-        public async Task InitializeSignedDistanceFields()
+        public (string status, List<Path> sequence, int seqCount, float totalDurationSecs) PlanDisassemblySequence()
         {
-            Debug.Log("Start Initialize Signed Distance Fields");
-
-            foreach (var partSDF in _partSDFs.Values)
-            {
-                await partSDF.ComputeSDF();
-            }
-
-            Debug.Log("Finished Initialize Signed Distance Fields");
-        }
-
-        public (string status, List<Path> sequence, int seqCount, float totalDurationSecs) PlanDisassemblySequence(int randomSeed)
-        {
-            UnityEngine.Random.InitState(randomSeed);
-            
             var seqStatus = "Failure";
             var sequence = new List<Path>();
             var seqCount = 0;
@@ -67,7 +42,7 @@ namespace PhysicsDisassembly
             }
             
             var activeQueue = _partIds.Select(partId => (partId, 1)).ToList();
-            Shuffle(activeQueue);
+            //Shuffle(activeQueue);
             var inactiveQueue = new List<(string id, int depth)>();
 
             var allIds = new HashSet<string>(_partIds);
@@ -85,7 +60,7 @@ namespace PhysicsDisassembly
                     }
                     
                     // Sort active queue by most promising parts
-                    activeQueue.Sort((a, b) => CompareParts(a.partId, b.partId, allIds));
+                    //activeQueue.Sort((a, b) => CompareParts(a.partId, b.partId, allIds));
                 }
                 
                 var (moveId, maxDepth) = activeQueue[0];
@@ -156,7 +131,7 @@ namespace PhysicsDisassembly
                     seqStatus = "Success";
                     
                     var finalPartId = allIds.First();
-                    var finalPartObject = _partObjects[finalPartId];
+                    var finalPartObject = _partDataMap[finalPartId].PartObject;
                     var initStatePath = new Path(finalPartId, finalPartObject);
                     initStatePath.Positions.Add(finalPartObject.position);
                     initStatePath.Orientations.Add(finalPartObject.rotation);
@@ -175,7 +150,7 @@ namespace PhysicsDisassembly
 
             if (_configuration.Verbose)
             {
-                Debug.Log($"Result: {seqStatus} | Disassembled: {sequence.Count}/{_partIds.Count} | Total # trials: {seqCount} | Total planning time: {totalDurationSecs}");
+                Debug.Log($"Result: {seqStatus} | Disassembled: {sequence.Count}/{_partIds.Length} | Total # trials: {seqCount} | Total planning time: {totalDurationSecs}");
                 Debug.Log($"Sequence: {string.Join(", ", sequence.Select(p => p.PartID))}");
             }
 
@@ -216,16 +191,13 @@ namespace PhysicsDisassembly
                 Debug.Log($"Attempt #{_attemptsPerPart[moveId]} for part {moveId}");
             }
 
-            var currentPartObjects = new Dictionary<string, Transform>() { { moveId, _partObjects[moveId] } };
-            var currentPartSDFs = new Dictionary<string, SignedDistanceField>() { { moveId, _partSDFs[moveId] } };
-
+            var currentPartData = new Dictionary<string, PartData>() { { moveId, _partDataMap[moveId] } };
             foreach (var partId in stillIds)
             {
-                currentPartObjects.Add(partId, _partObjects[partId]);
-                currentPartSDFs.Add(partId, _partSDFs[partId]);
+                currentPartData.Add(partId, _partDataMap[partId]);
             }
             
-            var planner = new BFSPlanner(moveId, stillIds, rotation, currentPartObjects, currentPartSDFs, 
+            var planner = new BFSPlanner(moveId, stillIds, rotation, currentPartData, 
                 _configuration.BFSPlannerConfiguration, _configuration.PhysicsSimulationConfiguration);
             
             var (status, tPlan, path) = planner.PlanPath(_configuration.PartTimeoutSecs, maxDepth, _configuration.Verbose);

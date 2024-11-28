@@ -60,58 +60,43 @@ namespace PhysicsDisassembly
 
             return simplifiedPath;
         }
-
+        
         private int FindNextKeyState(Path path, int startIndex)
         {
             var lastIndex = path.Positions.Count - 1;
             var startPos = path.Positions[startIndex];
-            var startRot = path.Orientations[startIndex];
             var endPos = path.Positions[lastIndex];
-            var endRot = path.Orientations[lastIndex];
-
-            var bestProgress = 0f;
+            
             var bestIndex = -1;
-            var previousProgress = 0f;
+            var bestProgress = 0f;
 
             // Look through subsequent states
             for (var i = startIndex + 1; i < path.Positions.Count; i++)
             {
                 var currentPos = path.Positions[i];
-                var currentRot = path.Orientations[i];
-
-                // Calculate progress metrics
-                 var totalProgress = CalculateDistanceProgress(startPos, currentPos, endPos);
-
-                if (_useRotation)
-                {
-                    // TODO: Test this
-                    var rotationProgress = CalculateRotationProgress(startRot, currentRot, endRot);
-                    totalProgress = (totalProgress + rotationProgress) * 0.5f;
-                }
-
-                // TODO: 
                 
                 // Check if this state represents significant progress
-                if (/*totalProgress > bestProgress && */totalProgress > /*previousProgress +*/ _configuration.SimplifierMinimumProgressThreshold)
+                var totalProgress = CalculateTotalDistanceProgress(startPos, currentPos, endPos);
+                if (totalProgress < _configuration.SimplifierMinimumProgressThreshold ||
+                    totalProgress > _configuration.SimplifierMaximumProgressThreshold ||
+                    totalProgress < bestProgress)
                 {
-                    
-
-                    // Verify we can move directly to this state
-                    if (IsValidTransition(path.Positions[startIndex], path.Orientations[startIndex],
-                            path.Positions[i], path.Orientations[i]))
-                    {
-                        bestProgress = totalProgress;
-                        bestIndex = i;
-                    }
+                    continue;
                 }
-
-                previousProgress = totalProgress;
+                
+                // Verify we can move directly to this state
+                if (IsValidTransition(startPos, path.Orientations[startIndex], 
+                        path.Positions[i], path.Orientations[i]))
+                {
+                    bestProgress = totalProgress;
+                    bestIndex = i;
+                }
             }
 
             return bestIndex;
         }
-
-        private float CalculateDistanceProgress(Vector3 start, Vector3 current, Vector3 goal)
+        
+        private float CalculateTotalDistanceProgress(Vector3 start, Vector3 current, Vector3 goal)
         {
             var totalDistance = Vector3.Distance(start, goal);
             if (totalDistance < float.Epsilon)
@@ -121,22 +106,20 @@ namespace PhysicsDisassembly
 
             var startToGoal = goal - start;
             var startToCurrent = current - start;
-
-            // Project current position onto start-goal vector
-            var projection = Vector3.Project(startToCurrent, startToGoal.normalized);
-            var progressDistance = projection.magnitude;
-
+            var progressDistance = 0f;
+            
             // Check if we're moving in the right direction
-            //if (Vector3.Dot(startToGoal, projection) < 0f)
-            if (Vector3.Dot(startToGoal.normalized, startToCurrent.normalized) < -0.25f)
+            if (Vector3.Dot(startToGoal.normalized, startToCurrent.normalized) > -0.25f)
             {
-                progressDistance = 0f;
+                // Project current position onto start-goal vector
+                var projection = Vector3.Project(startToCurrent, startToGoal.normalized);
+                progressDistance = projection.magnitude;
             }
 
             return Mathf.Clamp01(progressDistance / totalDistance);
         }
-
-        private float CalculateRotationProgress(Quaternion start, Quaternion current, Quaternion goal)
+        
+        /*private float CalculateRotationProgress(Quaternion start, Quaternion current, Quaternion goal)
         {
             var totalAngle = Quaternion.Angle(start, goal);
             if (totalAngle < float.Epsilon)
@@ -154,7 +137,7 @@ namespace PhysicsDisassembly
             }
 
             return Mathf.Clamp01(currentAngle / totalAngle);
-        }
+        }*/
 
         private bool IsValidTransition(Vector3 startPos, Quaternion startRot, Vector3 endPos, Quaternion endRot)
         {

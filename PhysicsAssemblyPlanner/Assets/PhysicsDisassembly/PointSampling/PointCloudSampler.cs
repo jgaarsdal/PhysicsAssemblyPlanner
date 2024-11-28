@@ -10,7 +10,7 @@ public static class PointCloudSampler
         WeightedBarycentricCoordinates
     }
     
-    public static Vector3[] GetPointCloud(GameObject objectRoot, int totalPointCount, SampleMethod sampleMethod, bool convertToWorldSpace = false)
+    public static Vector3[] GetPointCloud(GameObject objectRoot, int totalPointCount, SampleMethod sampleMethod, bool convertToWorldSpace = false, int randomSeed = -1)
     {
         var result = new List<Vector3>();
 
@@ -36,10 +36,10 @@ public static class PointCloudSampler
             switch (sampleMethod)
             {
                 case SampleMethod.BarycentricCoordinates:
-                    points = GetPointCloud(mesh.vertices, mesh.triangles, pointCount, false, out pointNormals, convertToWorldSpace, meshFilters[i].transform.localToWorldMatrix);
+                    points = GetPointCloud(mesh.vertices, mesh.triangles, pointCount, false, out pointNormals, convertToWorldSpace, meshFilters[i].transform.localToWorldMatrix, randomSeed);
                     break;
                 case SampleMethod.WeightedBarycentricCoordinates:
-                    points = GetWeightedPointCloud(mesh.vertices, mesh.triangles, pointCount, false, out pointNormals, convertToWorldSpace, meshFilters[i].transform.localToWorldMatrix);
+                    points = GetWeightedPointCloud(mesh.vertices, mesh.triangles, pointCount, false, out pointNormals, convertToWorldSpace, meshFilters[i].transform.localToWorldMatrix, randomSeed);
                     break;
                 default:
                     throw new NotImplementedException();
@@ -51,7 +51,7 @@ public static class PointCloudSampler
         return result.ToArray();
     }
     
-    public static Vector3[] GetPointCloudWithNormals(GameObject objectRoot, int totalPointCount, SampleMethod sampleMethod, out Vector3[] normals, bool convertToWorldSpace = false)
+    public static Vector3[] GetPointCloudWithNormals(GameObject objectRoot, int totalPointCount, SampleMethod sampleMethod, out Vector3[] normals, bool convertToWorldSpace = false, int randomSeed = -1)
     {
         var result = new List<Vector3>();
         var normalsList = new List<Vector3>();
@@ -78,10 +78,10 @@ public static class PointCloudSampler
             switch (sampleMethod)
             {
                 case SampleMethod.BarycentricCoordinates:
-                    points = GetPointCloud(mesh.vertices, mesh.triangles, pointCount, true, out pointNormals, convertToWorldSpace, meshFilters[i].transform.localToWorldMatrix);
+                    points = GetPointCloud(mesh.vertices, mesh.triangles, pointCount, true, out pointNormals, convertToWorldSpace, meshFilters[i].transform.localToWorldMatrix, randomSeed);
                     break;
                 case SampleMethod.WeightedBarycentricCoordinates:
-                    points = GetWeightedPointCloud(mesh.vertices, mesh.triangles, pointCount, true, out pointNormals, convertToWorldSpace, meshFilters[i].transform.localToWorldMatrix);
+                    points = GetWeightedPointCloud(mesh.vertices, mesh.triangles, pointCount, true, out pointNormals, convertToWorldSpace, meshFilters[i].transform.localToWorldMatrix, randomSeed);
                     break;
                 default:
                     throw new NotImplementedException();
@@ -95,28 +95,28 @@ public static class PointCloudSampler
         return result.ToArray();
     }
     
-    public static Vector3[] GetPointCloud(Vector3[] vertices, int[] triangles, int pointCount, SampleMethod sampleMethod, bool convertToWorldSpace = false, Matrix4x4 localToWorldMatrix = new Matrix4x4())
+    public static Vector3[] GetPointCloud(Vector3[] vertices, int[] triangles, int pointCount, SampleMethod sampleMethod, bool convertToWorldSpace = false, Matrix4x4 localToWorldMatrix = new Matrix4x4(), int randomSeed = -1)
     {
         Vector3[] normals;
         switch (sampleMethod)
         {
             case SampleMethod.BarycentricCoordinates:
-                return GetPointCloud(vertices, triangles, pointCount, false, out normals, convertToWorldSpace, localToWorldMatrix);
+                return GetPointCloud(vertices, triangles, pointCount, false, out normals, convertToWorldSpace, localToWorldMatrix, randomSeed);
             case SampleMethod.WeightedBarycentricCoordinates:
-                return GetWeightedPointCloud(vertices, triangles, pointCount, false, out normals, convertToWorldSpace, localToWorldMatrix);
+                return GetWeightedPointCloud(vertices, triangles, pointCount, false, out normals, convertToWorldSpace, localToWorldMatrix, randomSeed);
             default:
                 throw new NotImplementedException();
         }
     }
     
-    public static Vector3[] GetPointCloudWithNormals(Vector3[] vertices, int[] triangles, int pointCount, SampleMethod sampleMethod, out Vector3[] normals, bool convertToWorldSpace = false, Matrix4x4 localToWorldMatrix = new Matrix4x4())
+    public static Vector3[] GetPointCloudWithNormals(Vector3[] vertices, int[] triangles, int pointCount, SampleMethod sampleMethod, out Vector3[] normals, bool convertToWorldSpace = false, Matrix4x4 localToWorldMatrix = new Matrix4x4(), int randomSeed = -1)
     {
         switch (sampleMethod)
         {
             case SampleMethod.BarycentricCoordinates:
-                return GetPointCloud(vertices, triangles, pointCount, true, out normals, convertToWorldSpace, localToWorldMatrix);
+                return GetPointCloud(vertices, triangles, pointCount, true, out normals, convertToWorldSpace, localToWorldMatrix, randomSeed);
             case SampleMethod.WeightedBarycentricCoordinates:
-                return GetWeightedPointCloud(vertices, triangles, pointCount, true, out normals, convertToWorldSpace, localToWorldMatrix);
+                return GetWeightedPointCloud(vertices, triangles, pointCount, true, out normals, convertToWorldSpace, localToWorldMatrix, randomSeed);
             default:
                 throw new NotImplementedException();
         }
@@ -175,7 +175,7 @@ public static class PointCloudSampler
     }
     
     // Using Barycentric Coordinates method
-    private static Vector3[] GetPointCloud(Vector3[] vertices, int[] triangles, int pointCount, bool addNormals, out Vector3[] normals, bool convertToWorldSpace = false, Matrix4x4 localToWorldMatrix = new Matrix4x4())
+    private static Vector3[] GetPointCloud(Vector3[] vertices, int[] triangles, int pointCount, bool addNormals, out Vector3[] normals, bool convertToWorldSpace = false, Matrix4x4 localToWorldMatrix = new Matrix4x4(), int randomSeed = -1)
     {
         var result = new Vector3[pointCount];
         
@@ -185,7 +185,11 @@ public static class PointCloudSampler
             normals = new Vector3[pointCount];
         }
 
-        var random = new System.Random(Guid.NewGuid().GetHashCode());
+        randomSeed = randomSeed == -1
+            ? (int)DateTime.Now.Ticks
+            : randomSeed;
+        var random = new System.Random(randomSeed);
+        
         for (var i = 0; i < pointCount; i++)
         {
             result[i] = SampleMeshPoint(triangles, vertices, addNormals, random, out var faceNormal);
@@ -209,7 +213,7 @@ public static class PointCloudSampler
 
     // Using a weighted Barycentric Coordinates method to increase spread
     // Larger triangles have a larger weight and are more probable
-    private static Vector3[] GetWeightedPointCloud(Vector3[] vertices, int[] triangles, int pointCount, bool addNormals, out Vector3[] normals, bool convertToWorldSpace = false, Matrix4x4 localToWorldMatrix = new Matrix4x4())
+    private static Vector3[] GetWeightedPointCloud(Vector3[] vertices, int[] triangles, int pointCount, bool addNormals, out Vector3[] normals, bool convertToWorldSpace = false, Matrix4x4 localToWorldMatrix = new Matrix4x4(), int randomSeed = -1)
     {
         // Calculate areas of triangles and their CDF
         var totalArea = 0f;
@@ -239,8 +243,12 @@ public static class PointCloudSampler
         {
             normals = new Vector3[pointCount];
         }
+
+        randomSeed = randomSeed == -1
+            ? (int)DateTime.Now.Ticks
+            : randomSeed;
+        var random = new System.Random(randomSeed);
         
-        var random = new System.Random(Guid.NewGuid().GetHashCode());
         for (var i = 0; i < pointCount; i++)
         {
             result[i] = SampleMeshPointWithWeights(triangles, vertices, totalArea, triangleAreas, addNormals, random, out var faceNormal);

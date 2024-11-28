@@ -31,7 +31,7 @@ namespace PhysicsDisassembly.RRTConnect
             UnityEngine.Random.InitState(randomSeed);
             
             // Get the moving part bounds at its start state
-            _partBounds = GetPartBounds(_partObject, startState, true);
+            _partBounds = GetPartBounds(_partObject, startState, _configuration.RRTUseRotation);
             
             // Get the other parts bounds at their start states
             _otherPartBounds = GetPartBounds(_otherObjects, otherPartStates, false);

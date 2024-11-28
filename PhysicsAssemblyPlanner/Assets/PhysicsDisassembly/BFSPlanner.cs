@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using PhysicsDisassembly.SDF;
 using PhysicsDisassembly.Simulation;
 using UnityEngine;
 
@@ -7,7 +6,7 @@ namespace PhysicsDisassembly
 {
     public class BFSPlanner
     {
-        private Dictionary<string, Transform> _partObjects;
+        private Dictionary<string, PartData> _partDataMap;
         private string _moveId;
         private List<string> _stillIds;
         private bool _useRotation;
@@ -16,17 +15,16 @@ namespace PhysicsDisassembly
         private BFSPlannerConfiguration _plannerConfiguration;
         private PhysicsSimulationConfiguration _physicsConfiguration;
         
-        public BFSPlanner(string moveId, List<string> stillIds, bool useRotation,
-            Dictionary<string, Transform> partObjects, Dictionary<string, SignedDistanceField> partSDFs, 
+        public BFSPlanner(string moveId, List<string> stillIds, bool useRotation, Dictionary<string, PartData> partDataMap,  
             BFSPlannerConfiguration plannerConfiguration, PhysicsSimulationConfiguration physicsConfiguration)
         {
-            _partObjects = partObjects;
+            _partDataMap = partDataMap;
             _moveId = moveId;
             _stillIds = stillIds;
             _useRotation = useRotation;
             _physicsConfiguration = physicsConfiguration;
             _plannerConfiguration = plannerConfiguration;
-            _simulation = new PhysicsSimulation(partObjects, partSDFs, useRotation, _physicsConfiguration);
+            _simulation = new PhysicsSimulation(partDataMap, useRotation, _physicsConfiguration);
             
             CalculateBounds();
         }
@@ -54,7 +52,7 @@ namespace PhysicsDisassembly
             var status = "Failure";
             
             var stateQueue = new Queue<(State, Path)>();
-            stateQueue.Enqueue((initState, new Path(_moveId, _partObjects[_moveId])));
+            stateQueue.Enqueue((initState, new Path(_moveId, _partDataMap[_moveId].PartObject)));
 
             var path = GetPath(new List<State> { initState });
 
@@ -64,7 +62,7 @@ namespace PhysicsDisassembly
             while (stateQueue.Count > 0 && step < maxDepth)
             {
                 var (state, currentPath) = stateQueue.Dequeue();
-
+                
                 foreach (var action in actions)
                 {
                     if (verbose)
@@ -84,7 +82,7 @@ namespace PhysicsDisassembly
                     while (true)
                     {
                         SetState(GetState());
-                        
+
                         if (verbose)
                         {
                             var s = GetState();
@@ -146,7 +144,7 @@ namespace PhysicsDisassembly
 
                 step++;
             }
-
+            
             return (status, Time.realtimeSinceStartup - startTime, path);
         }
         
@@ -198,19 +196,19 @@ namespace PhysicsDisassembly
             {
                 actions = new float[][]
                 {
-                    new [] { 0f, 0f, 0f, 0f, 0f, 1f },
+                    //new [] { 0f, 0f, 0f, 0f, 0f, 1f },
                     new [] { 0f, 0f, 0f, 0f, 0f, -1f },
-                    new [] { 0f, 0f, 0f, 0f, 1f, 0f },
-                    new [] { 0f, 0f, 0f, 0f, -1f, 0f },
-                    new [] { 0f, 0f, 0f, 1f, 0f, 0f },
-                    new [] { 0f, 0f, 0f, -1f, 0f, 0f },
+                    //new [] { 0f, 0f, 0f, 0f, 1f, 0f },
+                    //new [] { 0f, 0f, 0f, 0f, -1f, 0f },
+                    //new [] { 0f, 0f, 0f, 1f, 0f, 0f },
+                    //new [] { 0f, 0f, 0f, -1f, 0f, 0f },
                     
                     new [] { 0f, 0f, 1f, 0f, 0f, 0f },
-                    new [] { 0f, 0f, -1f, 0f, 0f, 0f },
-                    new [] { 0f, 1f, 0f, 0f, 0f, 0f },
-                    new [] { 0f, -1f, 0f, 0f, 0f, 0f },
-                    new [] { 1f, 0f, 0f, 0f, 0f, 0f },
-                    new [] { -1f, 0f, 0f, 0f, 0f, 0f }
+                    //new [] { 0f, 0f, -1f, 0f, 0f, 0f },
+                    //new [] { 0f, 1f, 0f, 0f, 0f, 0f },
+                    //new [] { 0f, -1f, 0f, 0f, 0f, 0f },
+                    //new [] { 1f, 0f, 0f, 0f, 0f, 0f },
+                    //new [] { -1f, 0f, 0f, 0f, 0f, 0f }
                 };
             }
             else
@@ -226,7 +224,7 @@ namespace PhysicsDisassembly
                 };
             }
 
-            Shuffle(actions);
+            //Shuffle(actions);
             return actions;
         }
         
@@ -251,6 +249,7 @@ namespace PhysicsDisassembly
                 var statePositionDist = Vector3.Distance(pivotPosition, newState.PivotPosition);
                 if (statePositionDist >= _plannerConfiguration.BFSStatePositionThreshold)
                 {
+                    //Debug.LogError($"POS DIST OK: {statePositionDist}");
                     continue;
                 }
 
@@ -260,6 +259,7 @@ namespace PhysicsDisassembly
                     var stateAngleDist = Quaternion.Angle(rotation, newState.Rotation);
                     if (stateAngleDist >= _plannerConfiguration.BFSStateAngleThreshold)
                     {
+                        //Debug.LogWarning($"ANGLE DIST OK: {stateAngleDist}");
                         continue;
                     }
                 }
@@ -272,7 +272,7 @@ namespace PhysicsDisassembly
 
         private Path GetPath(List<State> states)
         {
-            var statePath = new Path(_moveId, _partObjects[_moveId]);
+            var statePath = new Path(_moveId, _partDataMap[_moveId].PartObject);
             foreach (var state in states)
             {
                 statePath.Positions.Add(state.PivotPosition);

@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace PhysicsDisassembly.Simulation
 {
-    public class Part
+    public class SimulationPart
     {
         public Vector3 CenterPosition
         {
@@ -47,27 +47,22 @@ namespace PhysicsDisassembly.Simulation
         
         private readonly float _maxVelocity = 0.01f;
         private readonly float _maxAngularVelocity = 0.01f;
-        private readonly int _contactPointCount = 1024;
 
-        public Part(Mesh mesh, PhysicsSimulationConfiguration configuration)
-            : this(mesh, Vector3.zero, Quaternion.identity, Vector3.one, configuration)
+        public SimulationPart(Mesh mesh, Vector3[] localContactPoints, PhysicsSimulationConfiguration configuration)
+            : this(mesh, localContactPoints, Vector3.zero, Quaternion.identity, Vector3.one, configuration)
         {
         }
 
-        public Part(Mesh mesh, Vector3 initialTransformPosition, Quaternion initialRotation, Vector3 initialScale, PhysicsSimulationConfiguration configuration)
+        public SimulationPart(Mesh mesh, Vector3[] localContactPoints, Vector3 initialTransformPosition, Quaternion initialRotation, Vector3 initialScale, PhysicsSimulationConfiguration configuration)
         {
             _maxVelocity = configuration.SimulationMaxVelocity;
             _maxAngularVelocity = configuration.SimulationMaxAngularVelocity;
-            _contactPointCount = configuration.SimulationContactPointCount;
-            
+
             _triangles = mesh.triangles;
             _localVertices = mesh.vertices;
             _worldVertices = new Vector3[_localVertices.Length];
-            _worldContactPoints = new Vector3[_contactPointCount];
-
-            // Get contact points
-            _localContactPoints = PointCloudSampler.GetPointCloud(_localVertices, _triangles, _contactPointCount,
-                PointCloudSampler.SampleMethod.WeightedBarycentricCoordinates, false);
+            _localContactPoints = localContactPoints;
+            _worldContactPoints = new Vector3[_localContactPoints.Length];
             
             // Calculate the geometric center in local space
             var sum = Vector3.zero;
@@ -140,7 +135,7 @@ namespace PhysicsDisassembly.Simulation
             {
                 _worldContactPoints[0] = transformMatrix.MultiplyPoint3x4(_localContactPoints[0]);
                 //var contactBounds = new Bounds(_worldContactPoints[0], Vector3.zero);
-                for (var i = 1; i < _contactPointCount; i++)
+                for (var i = 1; i < _localContactPoints.Length; i++)
                 {
                     _worldContactPoints[i] = transformMatrix.MultiplyPoint3x4(_localContactPoints[i]);
                     //contactBounds.Encapsulate(_worldContactPoints[i]);
