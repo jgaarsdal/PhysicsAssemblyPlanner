@@ -99,7 +99,7 @@ namespace PhysicsDisassembly
         private float CalculateTotalDistanceProgress(Vector3 start, Vector3 current, Vector3 goal)
         {
             var totalDistance = Vector3.Distance(start, goal);
-            if (totalDistance < float.Epsilon)
+            if (totalDistance < Mathf.Epsilon)
             {
                 return 1f;
             }

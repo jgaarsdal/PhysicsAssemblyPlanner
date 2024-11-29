@@ -12,8 +12,7 @@ namespace PhysicsDisassembly
         private readonly string[] _successStatus = { "Success", "Already disassembled" };
         private readonly string[] _failureStatus = { "Timeout", "Failure" };
         private readonly Dictionary<string, PartData> _partDataMap;
-
-        private Dictionary<string, int> _attemptsPerPart = new Dictionary<string, int>();
+        
         private Dictionary<string, HashSet<string>> _blockedByRelations = new Dictionary<string, HashSet<string>>();
         
         private const int _maxAttemptsPerPart = 1;
@@ -32,12 +31,10 @@ namespace PhysicsDisassembly
             var sequence = new List<Path>();
             var seqCount = 0;
             var totalDurationSecs = 0f;
-
-            _attemptsPerPart.Clear();
+            
             _blockedByRelations.Clear();
             foreach (var partId in _partIds)
             {
-                _attemptsPerPart[partId] = 0;
                 _blockedByRelations[partId] = new HashSet<string>();
             }
             
@@ -60,27 +57,17 @@ namespace PhysicsDisassembly
                     }
                     
                     // Sort active queue by most promising parts
-                    //activeQueue.Sort((a, b) => CompareParts(a.partId, b.partId, allIds));
+                    //activeQueue.Sort((a, b) => CompareParts(a.partId, a.Item2, b.partId, b.Item2, allIds));
                 }
                 
                 var (moveId, maxDepth) = activeQueue[0];
                 activeQueue.RemoveAt(0);
                 
-                // Check if we should try this part before doing any planning
-                if (!ShouldTryPart(moveId))
-                {
-                    if (_configuration.Verbose)
-                    {
-                        Debug.Log($"Skipping part {moveId} due to too many attempts");
-                    }
-                    continue;  // Skip to next part in queue
-                }
-                
                 var stillIds = allIds.Where(id => id != moveId).ToList();
-
+                
                 if (_configuration.Verbose)
                 {
-                    Debug.Log($"Attempting to remove part {moveId} (attempt #{_attemptsPerPart[moveId]})");
+                    Debug.Log($"Attempting to remove part {moveId} (depth is {maxDepth})");
                     Debug.Log($"Still parts: {string.Join(", ", stillIds)}");
                 }
                 
@@ -183,14 +170,6 @@ namespace PhysicsDisassembly
 
         private (string status, float tPlan, Path path) PlanPartPath(string moveId, List<string> stillIds, bool rotation, int maxDepth)
         {
-            // Increment attempts when we actually try to plan a path
-            _attemptsPerPart[moveId]++;
-        
-            if (_configuration.Verbose)
-            {
-                Debug.Log($"Attempt #{_attemptsPerPart[moveId]} for part {moveId}");
-            }
-
             var currentPartData = new Dictionary<string, PartData>() { { moveId, _partDataMap[moveId] } };
             foreach (var partId in stillIds)
             {
@@ -205,10 +184,10 @@ namespace PhysicsDisassembly
             return (status, tPlan, path);
         }
 
-        private int CompareParts(string partA, string partB, HashSet<string> remainingParts)
+        private int CompareParts(string partA, int depthA, string partB, int depthB, HashSet<string> remainingParts)
         {
             // Try parts with fewer attempts first
-            var attemptCompare = _attemptsPerPart[partA].CompareTo(_attemptsPerPart[partB]);
+            var attemptCompare = depthA.CompareTo(depthB);
             if (attemptCompare != 0)
             {
                 return attemptCompare;
@@ -219,19 +198,6 @@ namespace PhysicsDisassembly
             var bBlockedCount = _blockedByRelations[partB].Count(id => remainingParts.Contains(id));
             
             return aBlockedCount.CompareTo(bBlockedCount);
-        }
-        
-        private bool ShouldTryPart(string partId)
-        {
-            if (_attemptsPerPart[partId] >= _maxAttemptsPerPart)
-            {
-                if (_configuration.Verbose)
-                {
-                    Debug.Log($"Skipping part {partId} - reached maximum attempts ({_maxAttemptsPerPart})");
-                }
-                return false;
-            }
-            return true;
         }
     }
 }

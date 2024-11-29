@@ -39,16 +39,10 @@ namespace PhysicsDisassembly
                 var rotations = _disassemblySequence[i].Orientations;
 
                 Debug.Log($"Sequence #{i} has {positions.Count} positions/rotations");
-
-                var stepInterval = positions.Count > 200
-                    ? Mathf.FloorToInt(positions.Count / 100f)
-                    : 1;
-
-                var pointDuration = positions.Count > 200
-                    ? 4f / (positions.Count / 100f)
-                    : 4f / positions.Count;
-
-                for (var j = 0; j < positions.Count; j += stepInterval)
+                
+                var pointDuration = Mathf.Clamp(4f / positions.Count, 0.0005f, 4f);
+                
+                for (var j = 0; j < positions.Count; j++)
                 {
                     // Add position and rotation tweens to run in parallel
                     _disassemblyTweenSequence.Append(

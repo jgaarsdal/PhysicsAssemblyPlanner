@@ -1956,6 +1956,8 @@ MonoBehaviour:
   _rrtRandomPointAttempts: 10
   _rrtWorkspaceBoundsBufferPercentage: 0.5
   _rrtExplorationBias: 0.5
+  _useRandomSeed: 1
+  _fixedSeed: 896
   _minimumProgressThreshold: 0.01
   _maximumProgressThreshold: 0.5
   _transitionTestSteps: 10
@@ -2729,7 +2731,7 @@ MonoBehaviour:
   _simulationContactDamping: 1
   _simulationMaxVelocity: 0.0005
   _simulationMaxAngularVelocity: 0.05
-  _simulationContactPointCount: 1024
+  _simulationContactPointCount: 2048
   _simulationCollisionThreshold: -0.05
   _sdfDefaultCellSize: 0.05
   _sdfBoxPadding: 0.1
@@ -2742,8 +2744,8 @@ MonoBehaviour:
   _rrtRandomPointAttempts: 10
   _rrtWorkspaceBoundsBufferPercentage: 0.5
   _rrtExplorationBias: 0.5
-  _minimumProgressThreshold: 0.025
-  _maximumProgressThreshold: 0.15
+  _minimumProgressThreshold: 0.01
+  _maximumProgressThreshold: 0.05
   _transitionTestSteps: 10
 --- !u!1 &1255209141
 GameObject:
